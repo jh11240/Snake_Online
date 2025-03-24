@@ -11,6 +11,10 @@ ASOTestCharacter::ASOTestCharacter()
 
 }
 
+void ASOTestCharacter::OnConstruction(const FTransform& Transform)
+{
+}
+
 // Called when the game starts or when spawned
 void ASOTestCharacter::BeginPlay()
 {
@@ -31,4 +35,12 @@ void ASOTestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
+
+void ASOTestCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+}
+
+//void ASOTestCharacter::OnRep_UpdatePawnDataTable()
+//{
+//}
 
