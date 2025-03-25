@@ -48,14 +48,14 @@ void ASOServerTestActor::Tick(float DeltaTime)
 		AddActorWorldRotation(FRotator(0.f, 360.f * DeltaTime, 0.f));
 		ActorRotation = GetActorRotation();
 
-		//if (GetWorld()->GetFirstPlayerController())
-		//{
-		//	SetOwner(GetWorld()->GetFirstPlayerController());
-		//}
-		//else
-		//{
-		//	SetOwner(nullptr);
-		//}
+		if (GetWorld()->GetFirstPlayerController())
+		{
+			SetOwner(GetWorld()->GetFirstPlayerController());
+		}
+		else
+		{
+			SetOwner(nullptr);
+		}
 	}
 	else
 	{

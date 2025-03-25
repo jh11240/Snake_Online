@@ -3,6 +3,15 @@
 
 #include "Test/TestPlayerController.h"
 #include "Blueprint/UserWidget.h"
+#include "EnhancedInputSubsystems.h"
+#include "EnhancedInputComponent.h"
+#include "InputMappingContext.h"
+#include "InputAction.h"
+#include "Kismet/KismetMathLibrary.h"
+
+#include "InputActionValue.h"
+
+
 
 ATestPlayerController::ATestPlayerController()
 {
@@ -17,14 +26,55 @@ ATestPlayerController::ATestPlayerController()
     {
         UE_LOG(LogTemp, Error, TEXT("Failed to find UserWidgetClass!"));
     }
+
+    {
+        static ConstructorHelpers::FObjectFinder<UInputMappingContext> Asset
+        { TEXT("/Script/EnhancedInput.InputMappingContext'/Game/Input/MoveContext.MoveContext'") };
+        check(Asset.Object);
+
+        IMC_Move= Asset.Object;
+    }
 }
+
+const UInputAction* GetInputActionFromName(UInputMappingContext* IMC, const FName& InName)
+{
+    const TArray<FEnhancedActionKeyMapping>& Mappings = IMC->GetMappings();
+    for (auto& It : Mappings)
+    {
+        if (It.Action->GetFName() == InName)
+        {
+            return It.Action.Get();
+        }
+    }
+
+    return nullptr;
+}
+
 
 void ATestPlayerController::BeginPlay()
 {
     Super::BeginPlay();
+
+    UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+    if (Subsystem)
+    {
+        Subsystem->AddMappingContext(IMC_Move, 0);
+    }
+
     //TODO: Map처리
     if (IsLocalController()) // 로컬 플레이어 컨트롤러인지 확인
     {
+        //잘됨
+        //// 현재 레벨 경로를 가져와 비교
+        //FString CurrentLevelName = GetWorld()->GetOutermost()->GetName();
+        //FString TargetLevelName = TEXT("/Game/Test/Test");
+
+        //if (CurrentLevelName.Equals(TargetLevelName))
+        //{
+        //    return;
+        //// 추가 로직을 여기에 작성
+        //}
+
         if (LobbyWidget && createdLobbyWidget == nullptr) // UMG 블루프린트 클래스 확인
         {
             createdLobbyWidget =Cast<UUserWidget>( CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));
@@ -33,5 +83,35 @@ void ATestPlayerController::BeginPlay()
                 createdLobbyWidget->AddToViewport(); // 화면에 위젯 표시
             }
         }
+        bShowMouseCursor = true;
     }
+}
+
+void ATestPlayerController::SetupInputComponent()
+{
+    Super::SetupInputComponent();
+
+    UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
+    ensure(EnhancedInputComponent);
+
+    if (const UInputAction* MoveAction = GetInputActionFromName(IMC_Move, TEXT("MoveAction")))
+    {
+        EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::OnMove);
+    }
+}
+
+void ATestPlayerController::OnMove(const FInputActionValue& InputActionValue)
+{
+    //죽었을 때 처리
+    //if (StatusComponent && !StatusComponent->CanMove()) { return; }
+
+    const FVector2D ActionValue = InputActionValue.Get<FVector2D>();
+    const FRotator Rotation = K2_GetActorRotation();
+    const FRotator RotationYaw = FRotator(0.0, Rotation.Yaw, 0.0);
+    const FVector ForwardVector = UKismetMathLibrary::GetForwardVector(RotationYaw);
+    const FVector RightVector = UKismetMathLibrary::GetRightVector(RotationYaw);
+
+    APawn* ControlledPawn = GetPawn();
+    ControlledPawn->AddMovementInput(ForwardVector, ActionValue.X);
+    ControlledPawn->AddMovementInput(RightVector, ActionValue.Y);
 }

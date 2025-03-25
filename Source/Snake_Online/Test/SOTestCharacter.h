@@ -8,8 +8,11 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-
+#include "Test/SnakeData.h"
+#include "Net/UnrealNetwork.h"
 #include "SOTestCharacter.generated.h"
+
+
 
 UCLASS()
 class SNAKE_ONLINE_API ASOTestCharacter : public ACharacter
@@ -27,7 +30,7 @@ protected:
 
 public:	
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	//virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -42,14 +45,19 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
-	/*UFUNCTION()
+	UFUNCTION()
 	void OnRep_UpdatePawnDataTable();
+	UPROPERTY()
+	UStaticMeshComponent* SnakeStaticMeshCompoenent;
 
-	UPROPERTY(ReplicatedUsing = OnRep_UpdatePawnDataTable, EditAnywhere, meta = (RowType = "/Script/KDT3D.PawnTableRow"))
-	FDataTableRowHandle PawnDataTableRowHandle;
-	FPawnTableRow* CharacterData = nullptr;*/
+	UPROPERTY()
+	USkeletalMesh* SkeletalMesh;
+
+	UPROPERTY(ReplicatedUsing = OnRep_UpdatePawnDataTable, EditAnywhere, meta = (RowType = "/Script/KDT3D.SnakeTableRow"))
+	FDataTableRowHandle SnakeDataTableRowHandle;
+	FSnakeTableRow* SnakeData = nullptr;
 	
-	//TODO: 만약된다면 위에 미니맵 처리
-	//UPROPERTY(VisibleAnywhere)
-	//UPaperSpriteComponent* MinimapSpriteComponent;
+	/*TODO: 만약된다면 위에 미니맵 처리
+	UPROPERTY(VisibleAnywhere)
+	UPaperSpriteComponent* MinimapSpriteComponent;*/
 };

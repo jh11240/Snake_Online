@@ -7,6 +7,9 @@
 #include "TestPlayerController.generated.h"
 
 class UUserWidget;
+class InputAction;
+struct FInputActionValue;
+class UInputMappingContext;
 /**
  * 
  */
@@ -17,9 +20,12 @@ class SNAKE_ONLINE_API ATestPlayerController : public APlayerController
 	ATestPlayerController();
 public:
 	virtual void BeginPlay() override;
-	
+	virtual void SetupInputComponent() override;
+protected:
+	void OnMove(const FInputActionValue& InputActionValue);
 
 protected:
 	TSubclassOf<UUserWidget> LobbyWidget;
 	UUserWidget* createdLobbyWidget;
+	UInputMappingContext* IMC_Move= nullptr;
 };
