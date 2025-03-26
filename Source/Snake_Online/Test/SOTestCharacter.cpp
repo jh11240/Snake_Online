@@ -28,6 +28,20 @@ ASOTestCharacter::ASOTestCharacter()
 			SnakeDataTableRowHandle.RowName = "Green";
 
 	}
+	/*
+	* 	Collider = CreateDefaultSubobject<UShapeComponent>(TEXT("Collider"));
+	Collider->SetCollisionProfileName(CollisionProfileName::PawnTrigger);
+	RootComponent = Collider;
+
+	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
+	SkeletalMeshComponent->SetupAttachment(RootComponent);
+	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
+	StaticMeshComponent->SetupAttachment(RootComponent);
+	StaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	Collider->OnComponentBeginOverlap.AddUniqueDynamic(this , &ADroppedItem::OnOverlap);
+	*/
 
 	bReplicates = true;
 	SetReplicateMovement(true);
