@@ -12,20 +12,31 @@ ASOTestCharacter::ASOTestCharacter()
 			static ConstructorHelpers::FObjectFinder<UDataTable> Asset(TEXT("/Script/Engine.DataTable'/Game/Test/Datatable/Snake.Snake'"));
 			check(Asset.Object);
 			UDataTable* SnakeDataTable = Asset.Object;
+
+			// Row 순회하며 Material 정보 저장
+			TArray<FName> RowNames = SnakeDataTable->GetRowNames();
+			for (const FName& RowName : RowNames)
+			{
+				FSnakeTableRow* Row = SnakeDataTable->FindRow<FSnakeTableRow>(RowName, TEXT("Row Lookup"));
+				if (Row && Row->Material) // Material이 존재하는 경우
+				{
+					Materials.Add(Row->Material); // Materials 배열에 추가
+				}
+			}
+
 			SnakeDataTableRowHandle.DataTable = SnakeDataTable;
 			SnakeDataTableRowHandle.RowName = "Green";
 
 	}
 
 	bReplicates = true;
+	SetReplicateMovement(true);
 	NetCullDistanceSquared = 100000000.0f;
 	bAlwaysRelevant = true;
 	bUseControllerRotationYaw = false;
 
-	//GetMesh()->SetSkeletalMesh()
-
-	SnakeStaticMeshCompoenent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	SnakeStaticMeshCompoenent->SetupAttachment(RootComponent);
+	SnakeStaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
+	SnakeStaticMeshComponent->SetupAttachment(RootComponent);
 
 	//GetCapsuleComponent()->SetCollisionProfileName(CollisionProfileName::Player);
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
@@ -87,11 +98,18 @@ void ASOTestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 }
 
+void ASOTestCharacter::SetSnakeMaterial(int32 materialIdx)
+{
+	UMaterialInterface* materialToSet = Materials[materialIdx];
+	CToSSetMaterial(materialToSet);
+}
+
 void ASOTestCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, SnakeDataTableRowHandle);
+	DOREPLIFETIME(ThisClass, ReplicatedMaterial);
 }
 
 void ASOTestCharacter::OnRep_UpdatePawnDataTable()
@@ -107,13 +125,13 @@ void ASOTestCharacter::OnRep_UpdatePawnDataTable()
 		Movement->bOrientRotationToMovement = true;
 		Movement->GetNavAgentPropertiesRef().bCanCrouch = true;
 		Movement->MaxWalkSpeed = SnakeData->MovementMaxSpeed;
-
+		Movement->SetIsReplicated(true);
 	}
 
 	{
 	
-		SnakeStaticMeshCompoenent->SetStaticMesh(Data->StaticMesh);
-		SnakeStaticMeshCompoenent->SetIsReplicated(true);
+		SnakeStaticMeshComponent->SetStaticMesh(Data->StaticMesh);
+		SnakeStaticMeshComponent->SetIsReplicated(true);
 
 		// ACharacter::PostInitializeComponents() 시점에 초기에 설정된 Mesh의 RelativeLocation, RelativeRotation을 받아와서
 		// CharacterMovementComponent에서 사용하고 있음.
@@ -123,5 +141,16 @@ void ASOTestCharacter::OnRep_UpdatePawnDataTable()
 		// (Mesh->SetRelativeLocationAndRotation(NewRelTranslation, NewRelRotation, false, nullptr, GetTeleportType());)
 		CacheInitialMeshOffset(SnakeData->MeshTransform.GetTranslation(), SnakeData->MeshTransform.GetRotation().Rotator());
 	}
+}
+
+void ASOTestCharacter::OnRep_Material()
+{
+	SnakeStaticMeshComponent->SetMaterial(0, ReplicatedMaterial);
+}
+
+void ASOTestCharacter::CToSSetMaterial_Implementation(UMaterialInterface* NewMaterial)
+{
+	ReplicatedMaterial = NewMaterial;
+	SnakeStaticMeshComponent->SetMaterial(0, NewMaterial);
 }
 

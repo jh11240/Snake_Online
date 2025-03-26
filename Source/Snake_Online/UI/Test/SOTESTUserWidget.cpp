@@ -13,11 +13,19 @@ void USOTESTUserWidget::NativeConstruct()
     // 버튼과 클릭 이벤트를 연결
     if (loginButton) // Null 체크
     {
-        loginButton->OnClicked.AddDynamic(this, &USOTESTUserWidget::OnMyButtonClicked);
+        loginButton->OnClicked.AddDynamic(this, &USOTESTUserWidget::OnLoginButtonClicked);
+    }
+    if (GreenButton)
+    {
+        GreenButton->OnClicked.AddDynamic(this, &USOTESTUserWidget::OnGreenButtonClicked);
+    }
+    if (FireButton)
+    {
+        FireButton->OnClicked.AddDynamic(this, &USOTESTUserWidget::OnFireButtonClicked);
     }
 }
 
-void USOTESTUserWidget::OnMyButtonClicked()
+void USOTESTUserWidget::OnLoginButtonClicked()
 {
     // PlayerController를 가져오기
     APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
@@ -31,4 +39,24 @@ void USOTESTUserWidget::OnMyButtonClicked()
     }
     if (loginButton) // Null 체크
     loginButton->SetVisibility(ESlateVisibility::Collapsed);
+}
+
+void USOTESTUserWidget::OnFireButtonClicked()
+{
+    ChangeMaterialButtonClicked(1);
+}
+
+void USOTESTUserWidget::OnGreenButtonClicked()
+{
+    ChangeMaterialButtonClicked(0);
+
+}
+
+void USOTESTUserWidget::ChangeMaterialButtonClicked(int32 MaterialIndex)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Widget is invalid"));
+    if (OnChangeMaterial.IsBound())
+    {
+        OnChangeMaterial.Broadcast(MaterialIndex);
+    }
 }

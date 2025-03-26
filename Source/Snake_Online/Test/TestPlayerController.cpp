@@ -2,6 +2,8 @@
 
 
 #include "Test/TestPlayerController.h"
+#include "Test/SOTestCharacter.h"
+#include "UI/Test/SOTESTUserWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
@@ -75,14 +77,15 @@ void ATestPlayerController::BeginPlay()
         //// 추가 로직을 여기에 작성
         //}
 
-        if (LobbyWidget && createdLobbyWidget == nullptr) // UMG 블루프린트 클래스 확인
-        {
-            createdLobbyWidget =Cast<UUserWidget>( CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));
-            if (createdLobbyWidget)
-            {
-                createdLobbyWidget->AddToViewport(); // 화면에 위젯 표시
-            }
-        }
+        //if (LobbyWidget && createdLobbyWidget == nullptr) // UMG 블루프린트 클래스 확인
+        //{
+        //    createdLobbyWidget =Cast<UUserWidget>( CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));
+        //    if (createdLobbyWidget)
+        //    {
+        //        createdLobbyWidget->AddToViewport(); // 화면에 위젯 표시
+        //    }
+
+        //}
         bShowMouseCursor = true;
     }
 }
@@ -100,6 +103,38 @@ void ATestPlayerController::SetupInputComponent()
     }
 }
 
+void ATestPlayerController::OnRep_Pawn()
+{
+    Super::OnRep_Pawn();
+
+    ASOTestCharacter* ControlledCharacter = Cast<ASOTestCharacter>(GetPawn());
+    if (ControlledCharacter)
+    {
+        if (LobbyWidget && createdLobbyWidget == nullptr)
+        {
+            createdLobbyWidget = Cast<UUserWidget>(CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));
+            if (createdLobbyWidget)
+            {
+                createdLobbyWidget->AddToViewport(); // 화면에 위젯 표시
+            }
+        }
+        // Character 초기화 로직
+        USOTESTUserWidget* tmpWidget = Cast<USOTESTUserWidget>(createdLobbyWidget);
+        tmpWidget->OnChangeMaterial.AddDynamic(ControlledCharacter, &ASOTestCharacter::SetSnakeMaterial);
+    }
+}
+
+void ATestPlayerController::CToSMove_Implementation(const FVector& Direction, float Value)
+{
+    APawn* ControlledPawn = GetPawn();
+
+    if (ControlledPawn)
+    {
+        ControlledPawn->AddMovementInput(Direction, Value);
+    }
+}
+
+
 void ATestPlayerController::OnMove(const FInputActionValue& InputActionValue)
 {
     //죽었을 때 처리
@@ -112,6 +147,18 @@ void ATestPlayerController::OnMove(const FInputActionValue& InputActionValue)
     const FVector RightVector = UKismetMathLibrary::GetRightVector(RotationYaw);
 
     APawn* ControlledPawn = GetPawn();
+    //if (UWorld* thisWorld =GetWorld())
+    //{
+
+    //    CurrentTime = thisWorld->GetTimeSeconds();
+    //}
+
+    //if (CurrentTime - LastMoveTime >= MoveInterval) {
+//        CToSMove(ForwardVector, ActionValue.X);
     ControlledPawn->AddMovementInput(ForwardVector, ActionValue.X);
+  //      CToSMove(RightVector, ActionValue.Y);
     ControlledPawn->AddMovementInput(RightVector, ActionValue.Y);
+
+     //   LastMoveTime = CurrentTime;
+    //}
 }

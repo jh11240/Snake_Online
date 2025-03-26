@@ -34,6 +34,10 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+public:
+	UFUNCTION()
+	void SetSnakeMaterial(int32 materialIdx);
 protected:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	TObjectPtr<USpringArmComponent> SpringArm;
@@ -48,11 +52,26 @@ protected:
 	UFUNCTION()
 	void OnRep_UpdatePawnDataTable();
 	UPROPERTY()
-	UStaticMeshComponent* SnakeStaticMeshCompoenent;
+	UStaticMeshComponent* SnakeStaticMeshComponent;
 
-	UPROPERTY()
-	USkeletalMesh* SkeletalMesh;
+protected:
+	//Material 처리
 
+	UPROPERTY(EditAnywhere, Category = "Materials")
+	TArray<UMaterialInterface*> Materials;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Material)
+	UMaterialInterface* ReplicatedMaterial;
+
+	UFUNCTION()
+	void OnRep_Material();
+
+	UFUNCTION(Server, Reliable)
+	void CToSSetMaterial(UMaterialInterface* NewMaterial);
+
+
+protected:
+	//data table처리
 	UPROPERTY(ReplicatedUsing = OnRep_UpdatePawnDataTable, EditAnywhere, meta = (RowType = "/Script/KDT3D.SnakeTableRow"))
 	FDataTableRowHandle SnakeDataTableRowHandle;
 	FSnakeTableRow* SnakeData = nullptr;
