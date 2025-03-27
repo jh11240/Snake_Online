@@ -120,10 +120,11 @@ void ATestPlayerController::OnRep_Pawn()
         }
         // Character 초기화 로직
         USOTESTUserWidget* tmpWidget = Cast<USOTESTUserWidget>(createdLobbyWidget);
-        tmpWidget->OnChangeMaterial.AddDynamic(ControlledCharacter, &ASOTestCharacter::SetSnakeMaterial);
+        tmpWidget->OnChangeMaterial.AddUniqueDynamic(ControlledCharacter, &ASOTestCharacter::SetSnakeMaterial);
     }
 }
 
+//TODO : 키입력때 호출시 Packet 너무 많이 날려서 무시하는듯 -> 일단 하지말자
 void ATestPlayerController::CToSMove_Implementation(const FVector& Direction, float Value)
 {
     APawn* ControlledPawn = GetPawn();

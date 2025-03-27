@@ -44,16 +44,37 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	TObjectPtr<UCameraComponent> Camera;
+public:
 
+	UFUNCTION()
+	void OnHeadOverlap
+	(
+		UPrimitiveComponent* OverlappedComponent
+		, AActor* OtherActor
+		, UPrimitiveComponent* OtherComp
+		, int32 OtherBodyIndex
+		, bool bFromSweep
+		, const FHitResult& SweepResult
+	);
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
 	UFUNCTION()
-	void OnRep_UpdatePawnDataTable();
-	UPROPERTY()
-	UStaticMeshComponent* SnakeStaticMeshComponent;
+	void UpdatePawnDataTable();
 
+protected:
+	//머리 몸통 관련
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	UStaticMeshComponent* HeadComponent;
+
+	UPROPERTY()
+	TArray<UStaticMeshComponent*> BodyComponents;
+
+	UFUNCTION()
+	void AddBody();
+
+	int InitialSnakeBodyCnt=5;
 protected:
 	//Material 처리
 
@@ -72,7 +93,7 @@ protected:
 
 protected:
 	//data table처리
-	UPROPERTY(ReplicatedUsing = OnRep_UpdatePawnDataTable, EditAnywhere, meta = (RowType = "/Script/KDT3D.SnakeTableRow"))
+	//UPROPERTY(ReplicatedUsing = OnRep_UpdatePawnDataTable, EditAnywhere, meta = (RowType = "/Script/KDT3D.SnakeTableRow"))
 	FDataTableRowHandle SnakeDataTableRowHandle;
 	FSnakeTableRow* SnakeData = nullptr;
 	

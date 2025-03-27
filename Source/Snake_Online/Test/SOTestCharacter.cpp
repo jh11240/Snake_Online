@@ -2,6 +2,7 @@
 
 
 #include "Test/SOTestCharacter.h"
+#include "Utils/SOUtils.h"
 
 // Sets default values
 ASOTestCharacter::ASOTestCharacter()
@@ -28,33 +29,34 @@ ASOTestCharacter::ASOTestCharacter()
 			SnakeDataTableRowHandle.RowName = "Green";
 
 	}
-	/*
-	* 	Collider = CreateDefaultSubobject<UShapeComponent>(TEXT("Collider"));
-	Collider->SetCollisionProfileName(CollisionProfileName::PawnTrigger);
-	RootComponent = Collider;
 
-	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
-	SkeletalMeshComponent->SetupAttachment(RootComponent);
-	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
-	StaticMeshComponent->SetupAttachment(RootComponent);
-	StaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//복제 properties 처리
+	{
+		bReplicates = true;
+		SetReplicateMovement(true);
+		NetCullDistanceSquared = 100000000.0f;
+		bAlwaysRelevant = true;
+		bUseControllerRotationYaw = false;
+	}
 
-	Collider->OnComponentBeginOverlap.AddUniqueDynamic(this , &ADroppedItem::OnOverlap);
-	*/
+	//static mesh component 생성 - 머리 mesh 부분
+	{
+		//머리 컴퍼넌트
+		HeadComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
+		HeadComponent->SetupAttachment(RootComponent);
+		HeadComponent->ComponentTags.Add(SO::TagName::Head);
+		HeadComponent->SetGenerateOverlapEvents(true);
+		HeadComponent->SetCollisionProfileName(SO::CollisionProfileName::Head);
+		HeadComponent->OnComponentBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnHeadOverlap);
+		HeadComponent->SetIsReplicated(true);
 
-	bReplicates = true;
-	SetReplicateMovement(true);
-	NetCullDistanceSquared = 100000000.0f;
-	bAlwaysRelevant = true;
-	bUseControllerRotationYaw = false;
 
-	SnakeStaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	SnakeStaticMeshComponent->SetupAttachment(RootComponent);
+		//SnakeStaticMeshComponent->SetEnableGravity(false);
+	}
 
-	//GetCapsuleComponent()->SetCollisionProfileName(CollisionProfileName::Player);
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
+	//spring Arm이랑 camera 처리
 	{
 		SpringArm->ProbeSize = 5.0;
 		SpringArm->bUsePawnControlRotation = true;
@@ -74,6 +76,14 @@ ASOTestCharacter::ASOTestCharacter()
 		Camera->SetRelativeTransform(CameraTransform);
 	}
 
+	//캡슐컴퍼넌트랑 기본 mesh 꺼주기
+	{
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetCapsuleComponent()->SetEnableGravity(false);
+		GetCharacterMovement()->GravityScale = 0;
+		GetMesh()->SetEnableGravity(false);
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 }
 
 void ASOTestCharacter::OnConstruction(const FTransform& Transform)
@@ -87,9 +97,11 @@ void ASOTestCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	UpdatePawnDataTable();
 	if (HasAuthority())
 	{
-		OnRep_UpdatePawnDataTable();
+		for (int i = 0; i < InitialSnakeBodyCnt; i++)
+		AddBody();
 	}
 	// 클라중 내 클라만(ROLE_AutonomousProxy)
 	/*else if (GetLocalRole() == ROLE_AutonomousProxy)
@@ -97,13 +109,6 @@ void ASOTestCharacter::BeginPlay()
 		
 	}*/
 }
-
-// Called every frame
-//void ASOTestCharacter::Tick(float DeltaTime)
-//{
-//	Super::Tick(DeltaTime);
-//
-//}
 
 // Called to bind functionality to input
 void ASOTestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -118,15 +123,32 @@ void ASOTestCharacter::SetSnakeMaterial(int32 materialIdx)
 	CToSSetMaterial(materialToSet);
 }
 
+void ASOTestCharacter::OnHeadOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (HasAuthority()) {
+		//벽에 닿았을 때
+		if (OtherComp->ComponentHasTag(SO::TagName::Wall))
+		{
+
+		UE_LOG(LogTemp, Warning, TEXT("GameOver"));
+		}
+		else {
+		UE_LOG(LogTemp, Warning, TEXT("asdlfkjasdf"));
+
+		}
+
+	}
+
+}
+
 void ASOTestCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ThisClass, SnakeDataTableRowHandle);
 	DOREPLIFETIME(ThisClass, ReplicatedMaterial);
 }
 
-void ASOTestCharacter::OnRep_UpdatePawnDataTable()
+void ASOTestCharacter::UpdatePawnDataTable()
 {
 	if (SnakeDataTableRowHandle.IsNull()) { return; }
 	FSnakeTableRow* Data = SnakeDataTableRowHandle.GetRow<FSnakeTableRow>(TEXT("Snake"));
@@ -144,8 +166,7 @@ void ASOTestCharacter::OnRep_UpdatePawnDataTable()
 
 	{
 	
-		SnakeStaticMeshComponent->SetStaticMesh(Data->StaticMesh);
-		SnakeStaticMeshComponent->SetIsReplicated(true);
+		HeadComponent->SetStaticMesh(SnakeData->StaticMesh);
 
 		// ACharacter::PostInitializeComponents() 시점에 초기에 설정된 Mesh의 RelativeLocation, RelativeRotation을 받아와서
 		// CharacterMovementComponent에서 사용하고 있음.
@@ -157,14 +178,71 @@ void ASOTestCharacter::OnRep_UpdatePawnDataTable()
 	}
 }
 
+void ASOTestCharacter::AddBody()
+{
+
+	 // 새 Body Segment 생성
+	UStaticMeshComponent* NewBodySegment = NewObject<UStaticMeshComponent>(this);
+
+	// 초기 설정
+	NewBodySegment->SetCollisionProfileName(SO::CollisionProfileName::Body); // Body 충돌 프로파일
+	NewBodySegment->SetGenerateOverlapEvents(true); // Overlap 이벤트 활성화
+	NewBodySegment->SetStaticMesh(SnakeData->StaticMesh); // 사용할 Mesh를 설정
+	NewBodySegment->RegisterComponent(); // 컴포넌트 등록
+
+	// BodyComponents 배열에 추가
+	BodyComponents.Add(NewBodySegment);
+	NewBodySegment->SetIsReplicated(true);
+
+	#pragma region 부모-자식 관계 설정 (이미 등록된 상태이므로 AttachToComponent 사용)
+	if (BodyComponents.Num() > 1)
+	{
+		UStaticMeshComponent* PreviousSegment = BodyComponents[BodyComponents.Num() - 2];
+		NewBodySegment->AttachToComponent(HeadComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	}
+	else
+	{
+		NewBodySegment->AttachToComponent(HeadComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	}
+	#pragma endregion
+
+	#pragma region 새 노드의 위치 설정
+	FVector SpawnLocation = FVector::ZeroVector;
+	if (BodyComponents.Num() > 1)
+	{
+		UStaticMeshComponent* PreviousSegment = BodyComponents[BodyComponents.Num() - 2];
+		FVector PreviousLocation = PreviousSegment->GetRelativeLocation();
+		float BodyDiameter = PreviousSegment->Bounds.BoxExtent.Y * 2.0f; // 이전 Body의 지름 계산
+		SpawnLocation = PreviousLocation - FVector(0.0f, BodyDiameter, 0.0f); // -Y축으로 이동
+	}
+	else
+	{
+		SpawnLocation = HeadComponent->GetRelativeLocation() - FVector(0.0f, SnakeData->StaticMesh->GetBounds().BoxExtent.Y * 2.0f, 0.0f);
+	}
+
+	NewBodySegment->SetRelativeLocation(SpawnLocation);
+#pragma endregion
+
+	UE_LOG(LogTemp, Warning, TEXT("Added new body segment! Total body count: %d"), BodyComponents.Num());
+}
+
 void ASOTestCharacter::OnRep_Material()
 {
-	SnakeStaticMeshComponent->SetMaterial(0, ReplicatedMaterial);
+	HeadComponent->SetMaterial(0, ReplicatedMaterial);
+	for (UStaticMeshComponent* elem : BodyComponents)
+	{
+		if (!elem || !elem->IsRegistered())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Component is not registered or nullptr"));
+			continue;
+		}
+		elem->SetMaterial(0, ReplicatedMaterial);
+	}
 }
 
 void ASOTestCharacter::CToSSetMaterial_Implementation(UMaterialInterface* NewMaterial)
 {
+	//서버는 메테리얼 정보 필요 x 클라에서 처리해야함
 	ReplicatedMaterial = NewMaterial;
-	SnakeStaticMeshComponent->SetMaterial(0, NewMaterial);
 }
 
