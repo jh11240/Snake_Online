@@ -29,8 +29,7 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
-	//virtual void Tick(float DeltaTime) override;
+
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -68,13 +67,39 @@ protected:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	UStaticMeshComponent* HeadComponent;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Replicated)
 	TArray<UStaticMeshComponent*> BodyComponents;
 
 	UFUNCTION()
 	void AddBody();
 
+	//몸 지름
+	float BodyDiameter = 0;
 	int InitialSnakeBodyCnt=5;
+
+	//현재 snake 방향 관련
+	FVector Get8SideDir();
+protected:
+	//점수 처리
+
+	UPROPERTY(ReplicatedUsing = OnRep_ConsumedFood )
+	int ConsumedFood;
+
+	//서버 - 이 변수만큼 음식먹으면 몸 길어짐
+	int FoodCntToAddBody = 1;
+	//서버 - 몸 길이 컨트롤 변수(마지막으로 몸 추가한 후,남은 먹이수 관리)
+	int CurRemainingFoodCnt= 0;
+
+	UFUNCTION()
+	void OnRep_ConsumedFood();
+
+public: 
+	//먹이 먹었을 때
+	UFUNCTION()
+	void AddConsumedFood(int food);
+	//지금은 아니지만 추후 부스트 구현시 필요
+	UFUNCTION()
+	void RemoveConsumedFood(int food) { ConsumedFood -= food; }
 protected:
 	//Material 처리
 

@@ -34,7 +34,6 @@ ASOTestCharacter::ASOTestCharacter()
 	{
 		bReplicates = true;
 		SetReplicateMovement(true);
-		NetCullDistanceSquared = 100000000.0f;
 		bAlwaysRelevant = true;
 		bUseControllerRotationYaw = false;
 	}
@@ -102,6 +101,7 @@ void ASOTestCharacter::BeginPlay()
 	{
 		for (int i = 0; i < InitialSnakeBodyCnt; i++)
 		AddBody();
+	
 	}
 	// 클라중 내 클라만(ROLE_AutonomousProxy)
 	/*else if (GetLocalRole() == ROLE_AutonomousProxy)
@@ -146,6 +146,8 @@ void ASOTestCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, ReplicatedMaterial);
+	DOREPLIFETIME(ThisClass, BodyComponents);
+	DOREPLIFETIME(ThisClass, ConsumedFood);
 }
 
 void ASOTestCharacter::UpdatePawnDataTable()
@@ -167,6 +169,7 @@ void ASOTestCharacter::UpdatePawnDataTable()
 	{
 	
 		HeadComponent->SetStaticMesh(SnakeData->StaticMesh);
+		BodyDiameter= HeadComponent->Bounds.BoxExtent.Y * 2.0f; // 이전 Body의 지름 계산
 
 		// ACharacter::PostInitializeComponents() 시점에 초기에 설정된 Mesh의 RelativeLocation, RelativeRotation을 받아와서
 		// CharacterMovementComponent에서 사용하고 있음.
@@ -192,38 +195,135 @@ void ASOTestCharacter::AddBody()
 
 	// BodyComponents 배열에 추가
 	BodyComponents.Add(NewBodySegment);
+	NewBodySegment->ComponentTags.Add(SO::TagName::Body);
 	NewBodySegment->SetIsReplicated(true);
 
 	#pragma region 부모-자식 관계 설정 (이미 등록된 상태이므로 AttachToComponent 사용)
 	if (BodyComponents.Num() > 1)
 	{
 		UStaticMeshComponent* PreviousSegment = BodyComponents[BodyComponents.Num() - 2];
-		NewBodySegment->AttachToComponent(HeadComponent, FAttachmentTransformRules::KeepRelativeTransform);
+		
 	}
-	else
-	{
-		NewBodySegment->AttachToComponent(HeadComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	}
+	NewBodySegment->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	
 	#pragma endregion
 
 	#pragma region 새 노드의 위치 설정
 	FVector SpawnLocation = FVector::ZeroVector;
+	FVector CurrentDirection = Get8SideDir();
+
+	if (BodyDiameter == 0)
+	{
+		BodyDiameter = SnakeData->StaticMesh->GetBounds().BoxExtent.Y * 2.0f;
+	}
 	if (BodyComponents.Num() > 1)
 	{
 		UStaticMeshComponent* PreviousSegment = BodyComponents[BodyComponents.Num() - 2];
 		FVector PreviousLocation = PreviousSegment->GetRelativeLocation();
-		float BodyDiameter = PreviousSegment->Bounds.BoxExtent.Y * 2.0f; // 이전 Body의 지름 계산
-		SpawnLocation = PreviousLocation - FVector(0.0f, BodyDiameter, 0.0f); // -Y축으로 이동
+		SpawnLocation = PreviousLocation - CurrentDirection*BodyDiameter; // -Y축으로 이동
+		
 	}
 	else
 	{
-		SpawnLocation = HeadComponent->GetRelativeLocation() - FVector(0.0f, SnakeData->StaticMesh->GetBounds().BoxExtent.Y * 2.0f, 0.0f);
+		SpawnLocation = HeadComponent->GetRelativeLocation() - CurrentDirection*BodyDiameter;
 	}
 
 	NewBodySegment->SetRelativeLocation(SpawnLocation);
 #pragma endregion
 
 	UE_LOG(LogTemp, Warning, TEXT("Added new body segment! Total body count: %d"), BodyComponents.Num());
+}
+
+FVector ASOTestCharacter::Get8SideDir()
+{
+	FVector retDir = GetVelocity().GetSafeNormal();
+
+	if (!retDir.IsNearlyZero())
+	{
+		// X-Y 평면에서만 계산한다고 가정 (Z는 0)
+		float AngleRad = FMath::Atan2(retDir.Y, retDir.X);
+		//각도 구하기
+		float AngleDeg = FMath::RadiansToDegrees(AngleRad);
+
+		// 음수라면 360더해서 34분면 처리
+		if (AngleDeg < 0.0f)
+		{
+			AngleDeg += 360.0f;
+		}
+		// 45도 단위로 나눈 값 (0 ~ 7)
+		int calAngle = AngleDeg / 45.f;  // 정수 부분만 취함
+
+		switch (calAngle)
+		{
+		case 0:
+			// 0도: 오른쪽 방향 (1, 0, 0)
+			retDir = FVector(1.f, 0.f, 0.f);
+			break;
+		case 1:
+			// 45도: 오른쪽 위 (≈0.707, 0.707, 0)
+			retDir = FVector(0.7071f, 0.7071f, 0.f);
+			break;
+		case 2:
+			// 90도: 위쪽 (0, 1, 0)
+			retDir = FVector(0.f, 1.f, 0.f);
+			break;
+		case 3:
+			// 135도: 왼쪽 위 (≈-0.707, 0.707, 0)
+			retDir = FVector(-0.7071f, 0.7071f, 0.f);
+			break;
+		case 4:
+			// 180도: 왼쪽 ( -1, 0, 0 )
+			retDir = FVector(-1.f, 0.f, 0.f);
+			break;
+		case 5:
+			// 225도: 왼쪽 아래 (≈-0.707, -0.707, 0)
+			retDir = FVector(-0.7071f, -0.7071f, 0.f);
+			break;
+		case 6:
+			// 270도: 아래쪽 (0, -1, 0)
+			retDir = FVector(0.f, -1.f, 0.f);
+			break;
+		case 7:
+			// 315도: 오른쪽 아래 (≈0.707, -0.707, 0)
+			retDir = FVector(0.7071f, -0.7071f, 0.f);
+			break;
+		default:
+			// 예외 상황 (실제로는 여기로 진입하지 않음)
+			retDir = GetVelocity().GetSafeNormal();
+			break;
+		}
+
+		return retDir;
+	}
+	return FVector(1, 0, 0);
+
+}
+
+void ASOTestCharacter::OnRep_ConsumedFood()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Consumed Food"));
+
+}
+
+void ASOTestCharacter::AddConsumedFood(int food)
+{
+	//서버일때만 처리
+	if (HasAuthority())
+	{
+		ConsumedFood += food;
+		CurRemainingFoodCnt += food;
+		
+		//추가해야할 몸통의 갯수
+		int AddBodyCnt = CurRemainingFoodCnt / FoodCntToAddBody;
+		if (AddBodyCnt >= 0)
+		{
+			//AddBodyCnt만큼 추가
+			for(int i=0;i<AddBodyCnt;i++)
+				AddBody();
+			//추가하고 남은 값 갱신
+			CurRemainingFoodCnt =AddBodyCnt % FoodCntToAddBody;
+		}
+	}
 }
 
 void ASOTestCharacter::OnRep_Material()
