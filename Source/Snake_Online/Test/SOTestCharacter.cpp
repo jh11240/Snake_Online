@@ -252,7 +252,7 @@ FVector ASOTestCharacter::Get8SideDir()
 		//이미 8방향이라면 return;
 		float Remainder = FMath::Fmod(AngleDeg, 45.0f);
 		//0에 가깝거나 45에가까우면 
-		if (Remainder < KINDA_SMALL_NUMBER || (45.0f - Remainder) < KINDA_SMALL_NUMBER))
+		if (Remainder < KINDA_SMALL_NUMBER || (45.0f - Remainder) < KINDA_SMALL_NUMBER)
 			return;
 
 		// 45도 단위로 나눈 값 (0 ~ 7)
