@@ -128,12 +128,26 @@ void ATestPlayerController::OnRep_Pawn()
 void ATestPlayerController::CToSMove_Implementation(const FVector& Direction, float Value)
 {
     APawn* ControlledPawn = GetPawn();
-
-    if (ControlledPawn)
-    {
-        ControlledPawn->AddMovementInput(Direction, Value);
+    if (!ControlledPawn) {
+        ensure(false);
+        return;
     }
+    ACharacter* ControlledChar = Cast<ACharacter>(ControlledPawn);
+    if (!ControlledChar)
+    {
+        ensure(false);
+        return;
+    }
+    UCharacterMovementComponent* CharMovement = ControlledChar->GetCharacterMovement();
+    if (!CharMovement)
+    {
+        ensure(false);
+        return;
+    }
+    FVector NewVelocity = Direction * Value * moveSpeed;
+    CharMovement->Velocity = NewVelocity;
 }
+
 
 
 void ATestPlayerController::OnMove(const FInputActionValue& InputActionValue)
@@ -148,18 +162,34 @@ void ATestPlayerController::OnMove(const FInputActionValue& InputActionValue)
     const FVector RightVector = UKismetMathLibrary::GetRightVector(RotationYaw);
 
     APawn* ControlledPawn = GetPawn();
-    //if (UWorld* thisWorld =GetWorld())
+    if (!ControlledPawn) {
+        ensure(false);
+        return;
+    }
+
+    FVector MovementDirection = (ForwardVector * ActionValue.X) + (RightVector * ActionValue.Y);
+
+    // 만약 MovementDirection이 0이 아니라면 정규화하여 단위 벡터로 만든 후, 입력 크기를 별도로 계산
+    float InputMagnitude = MovementDirection.Size();
+    if (InputMagnitude > KINDA_SMALL_NUMBER)
+    {
+        MovementDirection /= InputMagnitude;
+    }
+    else
+    {
+        MovementDirection = FVector::ZeroVector;
+    }
+
+    CToSMove(MovementDirection, 1.f);
+
+    //원래 구현
+    //if (ACharacter* ControlledChar = Cast<ACharacter>(ControlledPawn))
     //{
-
-    //    CurrentTime = thisWorld->GetTimeSeconds();
+    //    if (UCharacterMovementComponent* CharMovement = ControlledChar->GetCharacterMovement())
+    //    {
+    //        CharMovement->StopMovementImmediately();
+    //    }
     //}
-
-    //if (CurrentTime - LastMoveTime >= MoveInterval) {
-//        CToSMove(ForwardVector, ActionValue.X);
-    ControlledPawn->AddMovementInput(ForwardVector, ActionValue.X);
-  //      CToSMove(RightVector, ActionValue.Y);
-    ControlledPawn->AddMovementInput(RightVector, ActionValue.Y);
-
-     //   LastMoveTime = CurrentTime;
-    //}
+    //ControlledPawn->AddMovementInput(ForwardVector, ActionValue.X * moveSpeed);
+    //ControlledPawn->AddMovementInput(RightVector, ActionValue.Y * moveSpeed);
 }

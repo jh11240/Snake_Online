@@ -199,11 +199,7 @@ void ASOTestCharacter::AddBody()
 	NewBodySegment->SetIsReplicated(true);
 
 	#pragma region 부모-자식 관계 설정 (이미 등록된 상태이므로 AttachToComponent 사용)
-	if (BodyComponents.Num() > 1)
-	{
-		UStaticMeshComponent* PreviousSegment = BodyComponents[BodyComponents.Num() - 2];
-		
-	}
+
 	NewBodySegment->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	
 	#pragma endregion
@@ -229,15 +225,17 @@ void ASOTestCharacter::AddBody()
 	}
 
 	NewBodySegment->SetRelativeLocation(SpawnLocation);
+	NewBodySegment->SetUsingAbsoluteLocation(true);
 #pragma endregion
 
 	UE_LOG(LogTemp, Warning, TEXT("Added new body segment! Total body count: %d"), BodyComponents.Num());
 }
 
+//TODO: 이제 velocity가 아마 8방향으로 고정되어서 굳이안써도될듯
 FVector ASOTestCharacter::Get8SideDir()
 {
 	FVector retDir = GetVelocity().GetSafeNormal();
-
+	retDir.Z = 0.0f;
 	if (!retDir.IsNearlyZero())
 	{
 		// X-Y 평면에서만 계산한다고 가정 (Z는 0)
@@ -250,8 +248,16 @@ FVector ASOTestCharacter::Get8SideDir()
 		{
 			AngleDeg += 360.0f;
 		}
+
+		//이미 8방향이라면 return;
+		float Remainder = FMath::Fmod(AngleDeg, 45.0f);
+		//0에 가깝거나 45에가까우면 
+		if (Remainder < KINDA_SMALL_NUMBER || (45.0f - Remainder) < KINDA_SMALL_NUMBER))
+			return;
+
 		// 45도 단위로 나눈 값 (0 ~ 7)
-		int calAngle = AngleDeg / 45.f;  // 정수 부분만 취함
+		//22.5 더한 후에 버림 -> 22.5보다 크면 45로 측정하기위해
+		int calAngle = FMath::FloorToInt((AngleDeg + 22.5f) / 45.f) % 8;
 
 		switch (calAngle)
 		{
@@ -260,32 +266,36 @@ FVector ASOTestCharacter::Get8SideDir()
 			retDir = FVector(1.f, 0.f, 0.f);
 			break;
 		case 1:
-			// 45도: 오른쪽 위 (≈0.707, 0.707, 0)
-			retDir = FVector(0.7071f, 0.7071f, 0.f);
+			// 45도: 오른쪽 위 
+			retDir = FVector(0.707f, 0.707f, 0.f);
 			break;
 		case 2:
 			// 90도: 위쪽 (0, 1, 0)
 			retDir = FVector(0.f, 1.f, 0.f);
 			break;
 		case 3:
-			// 135도: 왼쪽 위 (≈-0.707, 0.707, 0)
-			retDir = FVector(-0.7071f, 0.7071f, 0.f);
+			// 135도: 왼쪽 위 
+			retDir = FVector(-0.707f,.707f, 0.f);
+
 			break;
 		case 4:
 			// 180도: 왼쪽 ( -1, 0, 0 )
 			retDir = FVector(-1.f, 0.f, 0.f);
 			break;
 		case 5:
-			// 225도: 왼쪽 아래 (≈-0.707, -0.707, 0)
-			retDir = FVector(-0.7071f, -0.7071f, 0.f);
+			// 225도: 왼쪽 아래 
+			retDir = FVector(-.707f, -.707f, 0.f);
+
+
 			break;
 		case 6:
 			// 270도: 아래쪽 (0, -1, 0)
 			retDir = FVector(0.f, -1.f, 0.f);
 			break;
 		case 7:
-			// 315도: 오른쪽 아래 (≈0.707, -0.707, 0)
-			retDir = FVector(0.7071f, -0.7071f, 0.f);
+			// 315도: 오른쪽 아래
+			retDir = FVector(.707f, -.707f, 0.f);
+
 			break;
 		default:
 			// 예외 상황 (실제로는 여기로 진입하지 않음)

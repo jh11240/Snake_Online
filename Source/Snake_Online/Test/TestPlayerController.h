@@ -26,9 +26,11 @@ public:
 protected:
 	UFUNCTION(Server, Unreliable)
 	void CToSMove(const FVector& Direction, float Value);
+
 	
 	void OnMove(const FInputActionValue& InputActionValue);
 
+	float moveSpeed = 100.f;
 protected:
 	TSubclassOf<UUserWidget> LobbyWidget;
 	UUserWidget* createdLobbyWidget;
