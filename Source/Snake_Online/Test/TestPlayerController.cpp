@@ -110,6 +110,7 @@ void ATestPlayerController::OnRep_Pawn()
     ASOTestCharacter* ControlledCharacter = Cast<ASOTestCharacter>(GetPawn());
     if (ControlledCharacter)
     {
+        moveSpeed = ControlledCharacter->GetMoveSpeed();
         if (LobbyWidget && createdLobbyWidget == nullptr)
         {
             createdLobbyWidget = Cast<UUserWidget>(CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));

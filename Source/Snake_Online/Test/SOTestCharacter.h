@@ -29,7 +29,7 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
-
+	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -114,8 +114,22 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void CToSSetMaterial(UMaterialInterface* NewMaterial);
+protected:
+	//몸통 위치 갱신
+	UFUNCTION()
+	void SetBodyLocation();
 
+	//RPC -> 서버 함수로
+	UFUNCTION()
+	void MoveBodySegments(float DeltaTime);
+	
+	TArray<FVector> BodyComponentsLoc;
 
+	float BodyMoveRefreshRate = .5f;;
+	float curSec = 0;
+	float moveSpeed = 100.f;
+public:
+	float GetMoveSpeed() { return moveSpeed; }
 protected:
 	//data table처리
 	//UPROPERTY(ReplicatedUsing = OnRep_UpdatePawnDataTable, EditAnywhere, meta = (RowType = "/Script/KDT3D.SnakeTableRow"))

@@ -7,8 +7,8 @@
 // Sets default values
 ASOTestCharacter::ASOTestCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	//PrimaryActorTick.bCanEverTick = true;
+ 	
+	PrimaryActorTick.bCanEverTick = true;
 	{
 			static ConstructorHelpers::FObjectFinder<UDataTable> Asset(TEXT("/Script/Engine.DataTable'/Game/Test/Datatable/Snake.Snake'"));
 			check(Asset.Object);
@@ -99,15 +99,38 @@ void ASOTestCharacter::BeginPlay()
 	UpdatePawnDataTable();
 	if (HasAuthority())
 	{
+		FVector headWorldLoc = HeadComponent->GetComponentLocation();
+		BodyComponentsLoc.Add(headWorldLoc);
 		for (int i = 0; i < InitialSnakeBodyCnt; i++)
 		AddBody();
-	
+		if (BodyDiameter != 0)
+			BodyMoveRefreshRate = BodyDiameter / moveSpeed;
+		else
+			BodyMoveRefreshRate = 1.f;
 	}
 	// 클라중 내 클라만(ROLE_AutonomousProxy)
 	/*else if (GetLocalRole() == ROLE_AutonomousProxy)
 	{
 		
 	}*/
+}
+
+void ASOTestCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	#pragma region 몸통 분리 이동 로직
+	if (HasAuthority())
+	{
+		MoveBodySegments(DeltaTime);
+		if (curSec < BodyMoveRefreshRate) {
+			curSec += DeltaTime;
+			return;
+		}
+		SetBodyLocation();
+		curSec = 0;
+	}
+#pragma endregion
 }
 
 // Called to bind functionality to input
@@ -197,6 +220,7 @@ void ASOTestCharacter::AddBody()
 	BodyComponents.Add(NewBodySegment);
 	NewBodySegment->ComponentTags.Add(SO::TagName::Body);
 	NewBodySegment->SetIsReplicated(true);
+	NewBodySegment->SetUsingAbsoluteLocation(true);
 
 	#pragma region 부모-자식 관계 설정 (이미 등록된 상태이므로 AttachToComponent 사용)
 
@@ -215,17 +239,19 @@ void ASOTestCharacter::AddBody()
 	if (BodyComponents.Num() > 1)
 	{
 		UStaticMeshComponent* PreviousSegment = BodyComponents[BodyComponents.Num() - 2];
-		FVector PreviousLocation = PreviousSegment->GetRelativeLocation();
+		FVector PreviousLocation = PreviousSegment->GetComponentLocation();
 		SpawnLocation = PreviousLocation - CurrentDirection*BodyDiameter; // -Y축으로 이동
 		
 	}
 	else
 	{
-		SpawnLocation = HeadComponent->GetRelativeLocation() - CurrentDirection*BodyDiameter;
+		SpawnLocation = HeadComponent->GetComponentLocation() - CurrentDirection*BodyDiameter;
 	}
 
-	NewBodySegment->SetRelativeLocation(SpawnLocation);
-	NewBodySegment->SetUsingAbsoluteLocation(true);
+	NewBodySegment->SetWorldLocation(SpawnLocation);
+
+	FVector bodyWorldLoc = NewBodySegment->GetComponentLocation();
+	BodyComponentsLoc.Add(bodyWorldLoc);
 #pragma endregion
 
 	UE_LOG(LogTemp, Warning, TEXT("Added new body segment! Total body count: %d"), BodyComponents.Num());
@@ -347,6 +373,32 @@ void ASOTestCharacter::OnRep_Material()
 			continue;
 		}
 		elem->SetMaterial(0, ReplicatedMaterial);
+	}
+}
+
+void ASOTestCharacter::MoveBodySegments(float DeltaTime)
+{
+	 
+	//bodycomonents는 머리는 제외 
+	//따라서 bodycomonentsloc[i]는 bodycomponent[i-1]의 location
+	for (int i = 0; i < BodyComponents.Num(); i++)
+	{
+		FVector currentPos = BodyComponentsLoc[i+1];
+		FVector TargetPos = BodyComponentsLoc[i];
+		FVector direction = (TargetPos - currentPos).GetSafeNormal(); // 방향 계산
+		FVector newLocation = BodyComponents[i]->GetComponentLocation() + direction * moveSpeed * DeltaTime; // 이동 계산
+		BodyComponents[i]->SetWorldLocation(newLocation, true);
+	}
+}
+//전체 몸 기록하는 함수 
+//
+void ASOTestCharacter::SetBodyLocation()
+{
+	BodyComponentsLoc[0] = HeadComponent->GetComponentLocation();
+
+	for (int i = 0; i < BodyComponents.Num(); i++)
+	{
+		BodyComponentsLoc[i + 1] = BodyComponents[i]->GetComponentLocation();
 	}
 }
 

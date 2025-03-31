@@ -30,7 +30,9 @@ protected:
 	
 	void OnMove(const FInputActionValue& InputActionValue);
 
-	float moveSpeed = 100.f;
+	//혹시나 나중에 부스트 구현시 사용하려고
+	float speedMultiplier = 1.f;
+	float moveSpeed=100.f;
 protected:
 	TSubclassOf<UUserWidget> LobbyWidget;
 	UUserWidget* createdLobbyWidget;
