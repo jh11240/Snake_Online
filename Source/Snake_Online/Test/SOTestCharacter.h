@@ -55,6 +55,9 @@ public:
 		, bool bFromSweep
 		, const FHitResult& SweepResult
 	);
+
+	UFUNCTION()
+	void OnGameOver();
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

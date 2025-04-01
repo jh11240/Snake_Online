@@ -77,15 +77,15 @@ void ATestPlayerController::BeginPlay()
         //// 추가 로직을 여기에 작성
         //}
 
-        //if (LobbyWidget && createdLobbyWidget == nullptr) // UMG 블루프린트 클래스 확인
-        //{
-        //    createdLobbyWidget =Cast<UUserWidget>( CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));
-        //    if (createdLobbyWidget)
-        //    {
-        //        createdLobbyWidget->AddToViewport(); // 화면에 위젯 표시
-        //    }
+        if (LobbyWidget && createdLobbyWidget == nullptr) // UMG 블루프린트 클래스 확인
+        {
+            createdLobbyWidget =Cast<UUserWidget>( CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));
+            if (createdLobbyWidget)
+            {
+                createdLobbyWidget->AddToViewport(); // 화면에 위젯 표시
+            }
 
-        //}
+        }
         bShowMouseCursor = true;
     }
 }

@@ -76,7 +76,7 @@ void ASnakeFood::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 			}
 		}
 		//현재 그냥 테스트할때 이리저리 스폰된느거 찾기 귀찮아서 한군데에서 계속 냠냠중
-		//Destroy();
+		Destroy();
 	}
 }
 

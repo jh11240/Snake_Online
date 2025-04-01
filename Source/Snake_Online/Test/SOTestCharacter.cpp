@@ -152,16 +152,21 @@ void ASOTestCharacter::OnHeadOverlap(UPrimitiveComponent* OverlappedComponent, A
 		//벽에 닿았을 때
 		if (OtherComp->ComponentHasTag(SO::TagName::Wall))
 		{
-
-		UE_LOG(LogTemp, Warning, TEXT("GameOver"));
+			OnGameOver();
 		}
-		else {
-		UE_LOG(LogTemp, Warning, TEXT("asdlfkjasdf"));
-
+		else if(OtherComp->ComponentHasTag(SO::TagName::Body))
+		{
+			OnGameOver();
 		}
 
 	}
 
+}
+
+void ASOTestCharacter::OnGameOver()
+{
+	GetCharacterMovement()->Velocity = FVector::Zero();
+	UE_LOG(LogTemp, Warning, TEXT("GameOver"));
 }
 
 void ASOTestCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

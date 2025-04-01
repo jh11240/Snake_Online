@@ -2,4 +2,9 @@
 
 
 #include "Test/SOTestLoginModeBase.h"
+#include "UI/Lobby/LobbyHUD.h"
+ASOTestLoginModeBase::ASOTestLoginModeBase()
+{
+	HUDClass = ALobbyHUD::StaticClass();
+}
 

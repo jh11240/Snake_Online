@@ -13,5 +13,7 @@ UCLASS()
 class SNAKE_ONLINE_API ASOTestLoginModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
-	
+public:
+	ASOTestLoginModeBase();
+
 };

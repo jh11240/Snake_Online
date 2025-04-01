@@ -4,7 +4,7 @@
 
 namespace SO
 {
-	class SNAKE_ONLINE_API NetworkUtils
+	class /*SNAKE_ONLINE_API*/ NetworkUtils
 	{
 	public:
 		static FString GetServerURL() { return FURL; };
