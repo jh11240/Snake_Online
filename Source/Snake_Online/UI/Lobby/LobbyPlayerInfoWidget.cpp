@@ -6,6 +6,8 @@
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "Components/EditableText.h"
+#include "EngineUtils.h" 
+#include "Lobby/LobbySnakeActor.h"
 
 void ULobbyPlayerInfoWidget::NativeConstruct()
 {
@@ -30,6 +32,22 @@ void ULobbyPlayerInfoWidget::NativeConstruct()
 
 }
 
+
+void ULobbyPlayerInfoWidget::Begin()
+{
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    for (TActorIterator<ALobbySnakeActor> It(World); It; ++It)
+    {
+        ALobbySnakeActor* FoundActor = *It;
+        if (FoundActor)
+        {
+            LobbySnake = FoundActor;
+        }
+    }
+}
+
 void ULobbyPlayerInfoWidget::MatchStart()
 {
     MatchingWaitThrobber->SetVisibility(ESlateVisibility::Visible);
@@ -41,17 +59,23 @@ void ULobbyPlayerInfoWidget::MatchStart()
 void ULobbyPlayerInfoWidget::NextMaterialBtnPressed()
 {
     UE_LOG(LogTemp, Warning, TEXT("Next Material started!"));
-
+    if (!LobbySnake)
+        return;
+    LobbySnake->SetNextSnakeMaterial();
 }
 
 void ULobbyPlayerInfoWidget::PrevMaterialBtnPressed()
 {
     UE_LOG(LogTemp, Warning, TEXT("Prev Material started!"));
-
+    if (!LobbySnake)
+        return;
+    LobbySnake->SetPrevSnakeMaterial();
 }
 
 void ULobbyPlayerInfoWidget::SetName()
 {
     Name = NameText->GetText();
-
+    if (!LobbySnake)
+        return;
+    LobbySnake->SetNameText(Name);
 }

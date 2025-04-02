@@ -18,7 +18,7 @@ class SNAKE_ONLINE_API UPlayerNameUserWidget : public UUserWidget
 protected:
 	UPROPERTY(meta = (bindwidget))
 	UTextBlock* NameDisplayText;
-
+public:
 	UFUNCTION()
 	void SetNameText(FText inName);
 };

@@ -10,6 +10,7 @@ class UButton;
 class UCircularThrobber;
 class UTextBlock;
 class UEditableText;
+class  ALobbySnakeActor;
 /**
  * 
  */
@@ -45,6 +46,9 @@ protected:
     UButton* NameSelectButton;
 
     FText Name;
+    ALobbySnakeActor* LobbySnake;
+public :
+    void Begin();
 protected:
     UFUNCTION()
     void MatchStart();

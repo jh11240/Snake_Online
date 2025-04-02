@@ -32,7 +32,19 @@ protected:
 	TArray<UStaticMeshComponent*> BodyComponents;
 	float BodyDiameter = 0;
 
+protected:
+	//Material
+	UPROPERTY(EditAnywhere, Category = "Materials")
+	TArray<UMaterialInterface*> Materials;
+	int32 MaterialSize = 0;
 
+	void SetSnakeMaterial(int32 materialIdx);
+	int32 curIdx=0;
+
+public:
+	void SetNextSnakeMaterial();
+	void SetPrevSnakeMaterial();
+	void SetNameText(FText InName);
 protected:
 	//몸통 위치 갱신
 	UFUNCTION()
@@ -46,17 +58,18 @@ protected:
 
 	float BodyMoveRefreshRate = .2f;
 	float curSec = 0;
-	float moveSpeed = 500.f;
+	UPROPERTY(EditAnywhere)
+	float moveSpeed = 750.f;
 
 	float RotationSpeed = 90.f;
 	float RotateAngle = 0.f;
-	
+	UPROPERTY(EditAnywhere)
 	float RotateRadius = 500.f;
-
+public:
+	void AddBody();
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 
-	void AddBody();
 };

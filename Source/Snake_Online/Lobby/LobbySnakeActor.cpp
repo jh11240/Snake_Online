@@ -2,6 +2,8 @@
 
 
 #include "Lobby/LobbySnakeActor.h"
+#include "Test/SnakeData.h"
+#include "UI/PlayerNameUserWidget.h"
 #include "Components/WidgetComponent.h"
 
 // Sets default values
@@ -9,6 +11,27 @@ ALobbySnakeActor::ALobbySnakeActor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+#pragma region material 할당
+	{
+		static ConstructorHelpers::FObjectFinder<UDataTable> Asset(TEXT("/Script/Engine.DataTable'/Game/Test/Datatable/Snake.Snake'"));
+		check(Asset.Object);
+		UDataTable* SnakeDataTable = Asset.Object;
+
+		// Row 순회하며 Material 정보 저장
+		TArray<FName> RowNames = SnakeDataTable->GetRowNames();
+		for (const FName& RowName : RowNames)
+		{
+			FSnakeTableRow* Row = SnakeDataTable->FindRow<FSnakeTableRow>(RowName, TEXT("Row Lookup"));
+
+			if (Row && Row->Material) // Material이 존재하는 경우
+			{
+				Materials.Add(Row->Material); // Materials 배열에 추가
+			}
+		}
+		MaterialSize = Materials.Num();
+
+	}
+#pragma endregion
 #pragma region staticmesh 생성
 	{
 		HeadComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
@@ -21,18 +44,18 @@ ALobbySnakeActor::ALobbySnakeActor()
 			SphereMesh = MeshAsset.Object;
 			HeadComponent->SetStaticMesh(SphereMesh);
 		}
-		HeadComponent->SetupAttachment(RootComponent);
+		RootComponent= HeadComponent;
 		HeadComponent->SetRelativeLocation(FVector(0, 0, -RotateRadius));
 	}
 #pragma endregion
 #pragma region NameUI 세팅
 	{
 		// HP Bar
-		{
-			ConstructorHelpers::FClassFinder<UUserWidget> WidgetClass(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/UI/Lobby/SOPlayerName.SOPlayerName_C'"));
-			NameTextComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPWidgetComponent"));
-			NameTextComponent->SetupAttachment(RootComponent);
-			NameTextComponent->SetRelativeLocation(FVector(0, 0, 100.0));
+		{///Script/UMGEditor.WidgetBlueprint'/Game/UI/Lobby/SOPlayerName.SOPlayerName'
+			ConstructorHelpers::FClassFinder<UPlayerNameUserWidget> WidgetClass(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/UI/Lobby/SOPlayerName.SOPlayerName_C'"));
+			NameTextComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameWidgetComponent"));
+			NameTextComponent->SetupAttachment(HeadComponent);
+			NameTextComponent->SetRelativeLocation(FVector(0, 0, 150.0));
 			NameTextComponent->SetDrawSize(FVector2D(256.3, 17.0));
 			NameTextComponent->SetWidgetSpace(EWidgetSpace::Screen);
 			NameTextComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -47,7 +70,7 @@ ALobbySnakeActor::ALobbySnakeActor()
 void ALobbySnakeActor::BeginPlay()
 {
 	Super::BeginPlay();
-	FVector headWorldLoc = HeadComponent->GetComponentLocation();
+	FVector headWorldLoc = FVector(0,0,-500);
 	BodyComponentsLoc.Add(headWorldLoc);
 	for (int i = 0; i < 6; i++)
 		AddBody();
@@ -55,6 +78,38 @@ void ALobbySnakeActor::BeginPlay()
 		BodyMoveRefreshRate = BodyDiameter / moveSpeed;
 	else
 		BodyMoveRefreshRate = 1.f;
+}
+
+void ALobbySnakeActor::SetSnakeMaterial(int32 materialIdx)
+{
+	UMaterialInterface* materialToSet = Materials[materialIdx];
+	HeadComponent->SetMaterial(0, materialToSet);
+
+	for (UStaticMeshComponent* elem : BodyComponents)
+	{
+		elem->SetMaterial(0, materialToSet);
+	}
+}
+
+void ALobbySnakeActor::SetNextSnakeMaterial()
+{
+	curIdx = (curIdx + 1) % MaterialSize;
+	SetSnakeMaterial(curIdx);
+}
+
+void ALobbySnakeActor::SetPrevSnakeMaterial()
+{
+	curIdx = curIdx ==0?  MaterialSize-1 : (curIdx-1)%MaterialSize;
+	SetSnakeMaterial(curIdx);
+}
+
+void ALobbySnakeActor::SetNameText(FText InName)
+{
+	UPlayerNameUserWidget* playerNameWidget = Cast<UPlayerNameUserWidget>(NameTextComponent->GetWidget());
+	if (playerNameWidget)
+	{
+		playerNameWidget->SetNameText(InName);
+	}
 }
 
 void ALobbySnakeActor::SetBodyLocation()
