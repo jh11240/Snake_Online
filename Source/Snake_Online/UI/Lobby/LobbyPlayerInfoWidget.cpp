@@ -7,6 +7,7 @@
 #include "Components/Button.h"
 #include "Components/EditableText.h"
 #include "EngineUtils.h" 
+#include "Lobby/LobbyPlayerController.h"
 #include "Lobby/LobbySnakeActor.h"
 
 void ULobbyPlayerInfoWidget::NativeConstruct()
@@ -46,6 +47,7 @@ void ULobbyPlayerInfoWidget::Begin()
             LobbySnake = FoundActor;
         }
     }
+    pc = Cast<ALobbyPlayerController> (World->GetFirstPlayerController());
 }
 
 void ULobbyPlayerInfoWidget::MatchStart()
@@ -53,6 +55,7 @@ void ULobbyPlayerInfoWidget::MatchStart()
     MatchingWaitThrobber->SetVisibility(ESlateVisibility::Visible);
     MatchingWaitText->SetText(FText::FromString(TEXT("랜덤 매칭 중...")));
 
+    pc->CToSAddPlayerQueue();
     UE_LOG(LogTemp, Warning, TEXT("Match making started!"));
 }
 

@@ -3,8 +3,12 @@
 
 #include "Test/SOTestLoginModeBase.h"
 #include "UI/Lobby/LobbyHUD.h"
+#include "Lobby/LobbyPlayerController.h"
 ASOTestLoginModeBase::ASOTestLoginModeBase()
 {
 	HUDClass = ALobbyHUD::StaticClass();
+	PlayerControllerClass = ALobbyPlayerController::StaticClass();
+	//bUseSeamlessTravel = true;
+
 }
 

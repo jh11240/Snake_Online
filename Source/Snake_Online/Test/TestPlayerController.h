@@ -22,11 +22,11 @@ public:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 	virtual void OnRep_Pawn() override;
-	UUserWidget* GetLobbyWidget() {return createdLobbyWidget;	};
+	UUserWidget* GetLobbyWidget() {return createdLobbyWidget;};
+
 protected:
 	UFUNCTION(Server, Unreliable)
 	void CToSMove(const FVector& Direction, float Value);
-
 	
 	void OnMove(const FInputActionValue& InputActionValue);
 

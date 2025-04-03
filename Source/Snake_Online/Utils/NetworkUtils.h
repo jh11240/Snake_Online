@@ -12,7 +12,7 @@ namespace SO
 		
 	private:
 		static inline FString FURL = TEXT("127.0.0.1:7777");
-		static inline FString GameMap = TEXT("/ Script / Engine.World'/Game/Test/Test.Test'");
+		static inline FString GameMap = TEXT("/Game/Test/Test");
 
 	};
 }

@@ -11,6 +11,7 @@ class UCircularThrobber;
 class UTextBlock;
 class UEditableText;
 class  ALobbySnakeActor;
+class ALobbyPlayerController;
 /**
  * 
  */
@@ -47,6 +48,7 @@ protected:
 
     FText Name;
     ALobbySnakeActor* LobbySnake;
+    ALobbyPlayerController* pc;
 public :
     void Begin();
 protected:

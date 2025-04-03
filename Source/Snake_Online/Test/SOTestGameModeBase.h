@@ -18,13 +18,17 @@ class SNAKE_ONLINE_API ASOTestGameModeBase : public AGameModeBase
 	
 public:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 private:
 	void SpawnFood();
 	FVector GetRandomLocation();
 
-	FVector MinBound= FVector(-2360.0, -2360.0, 140.0);
-	FVector MaxBound = FVector(2310., 2300.,141.);
+	FVector MinBound= FVector(-150.000000, -250.000000, 140.000000);
+	FVector MaxBound = FVector(990.000000, 530.000000, 140.000000);
 
 	// 타이머 핸들 변수 선언
 	FTimerHandle FoodSpawnTimerHandle;
+
+	float curSec = 0.f;
+	float spawnSec = 3.f;
 };

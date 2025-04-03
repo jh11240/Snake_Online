@@ -18,6 +18,7 @@ protected:
     // NativeConstruct 재정의
     virtual void NativeConstruct() override;
 
+    UFUNCTION()
     virtual void ServerConnect();
     // 위젯 블루프린트와 연결될 버튼
     UPROPERTY(meta = (BindWidget))

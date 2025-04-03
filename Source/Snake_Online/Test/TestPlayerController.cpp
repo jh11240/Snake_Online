@@ -10,6 +10,8 @@
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Subsystem/SOServerSubsystem.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 
 #include "InputActionValue.h"
 
@@ -62,7 +64,8 @@ void ATestPlayerController::BeginPlay()
     {
         Subsystem->AddMappingContext(IMC_Move, 0);
     }
-
+    UWidgetBlueprintLibrary::SetInputMode_GameOnly(this, true);
+    bShowMouseCursor = false;
     //TODO: Map처리
     if (IsLocalController()) // 로컬 플레이어 컨트롤러인지 확인
     {
@@ -77,16 +80,15 @@ void ATestPlayerController::BeginPlay()
         //// 추가 로직을 여기에 작성
         //}
 
-        if (LobbyWidget && createdLobbyWidget == nullptr) // UMG 블루프린트 클래스 확인
-        {
-            createdLobbyWidget =Cast<UUserWidget>( CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));
-            if (createdLobbyWidget)
-            {
-                createdLobbyWidget->AddToViewport(); // 화면에 위젯 표시
-            }
+        //if (LobbyWidget && createdLobbyWidget == nullptr) // UMG 블루프린트 클래스 확인
+        //{
+        //    createdLobbyWidget =Cast<UUserWidget>( CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));
+        //    if (createdLobbyWidget)
+        //    {
+        //        createdLobbyWidget->AddToViewport(); // 화면에 위젯 표시
+        //    }
 
-        }
-        bShowMouseCursor = true;
+        //}
     }
 }
 
@@ -110,22 +112,24 @@ void ATestPlayerController::OnRep_Pawn()
     ASOTestCharacter* ControlledCharacter = Cast<ASOTestCharacter>(GetPawn());
     if (ControlledCharacter)
     {
-        moveSpeed = ControlledCharacter->GetMoveSpeed();
-        if (LobbyWidget && createdLobbyWidget == nullptr)
-        {
-            createdLobbyWidget = Cast<UUserWidget>(CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));
-            if (createdLobbyWidget)
-            {
-                createdLobbyWidget->AddToViewport(); // 화면에 위젯 표시
-            }
-        }
-        // Character 초기화 로직
-        USOTESTUserWidget* tmpWidget = Cast<USOTESTUserWidget>(createdLobbyWidget);
-        tmpWidget->OnChangeMaterial.AddUniqueDynamic(ControlledCharacter, &ASOTestCharacter::SetSnakeMaterial);
+        //moveSpeed = ControlledCharacter->GetMoveSpeed();
+        //if (LobbyWidget && createdLobbyWidget == nullptr)
+        //{
+        //    createdLobbyWidget = Cast<UUserWidget>(CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));
+        //    if (createdLobbyWidget)
+        //    {
+        //        createdLobbyWidget->AddToViewport(); // 화면에 위젯 표시
+        //    }
+        //}
+        //// Character 초기화 로직
+        //USOTESTUserWidget* tmpWidget = Cast<USOTESTUserWidget>(createdLobbyWidget);
+        //tmpWidget->OnChangeMaterial.AddUniqueDynamic(ControlledCharacter, &ASOTestCharacter::SetSnakeMaterial);
     }
 }
 
-//TODO : 키입력때 호출시 Packet 너무 많이 날려서 무시하는듯 -> 일단 하지말자
+
+
+//TODO : 키입력때 호출시 Packet 너무 많이 날려서 무시하는듯..?
 void ATestPlayerController::CToSMove_Implementation(const FVector& Direction, float Value)
 {
     APawn* ControlledPawn = GetPawn();
@@ -153,8 +157,6 @@ void ATestPlayerController::CToSMove_Implementation(const FVector& Direction, fl
 
 void ATestPlayerController::OnMove(const FInputActionValue& InputActionValue)
 {
-    //죽었을 때 처리
-    //if (StatusComponent && !StatusComponent->CanMove()) { return; }
 
     const FVector2D ActionValue = InputActionValue.Get<FVector2D>();
     const FRotator Rotation = K2_GetActorRotation();

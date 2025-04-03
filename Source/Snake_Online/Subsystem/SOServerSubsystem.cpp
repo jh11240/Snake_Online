@@ -3,8 +3,22 @@
 
 #include "Subsystem/SOServerSubsystem.h"
 #include "Utils/NetworkUtils.h"
+#include "Net/UnrealNetwork.h"
+
+
 void USOServerSubsystem::AddPlayerToQueue(APlayerController* Player)
 {
+    UE_LOG(LogTemp, Warning, TEXT("AddPlayerToQueue 서버에서 실행됨!"));
+
+    if (!Player) return;
+    PlayerQueue.Add(Player);
+
+    TryMatchPlayers();
+}
+void USOServerSubsystem::AddPlayerToQueue(APlayerController* Player, FPlayerSettings* playerSetting)
+{
+    UE_LOG(LogTemp, Warning, TEXT("AddPlayerToQueue 서버에서 실행됨!"));
+
     if (!Player) return;
     PlayerQueue.Add(Player);
 
@@ -13,20 +27,21 @@ void USOServerSubsystem::AddPlayerToQueue(APlayerController* Player)
 
 void USOServerSubsystem::TryMatchPlayers()
 {
-    if (PlayerQueue.Num() < 2)
-        return;
+        UE_LOG(LogTemp, Warning, TEXT("TryMatchPlayers 서버에서 실행됨!"));
+        if (PlayerQueue.Num() < 2)
+            return;
 
-    APlayerController* Player1 = PlayerQueue[0];
-    APlayerController* Player2 = PlayerQueue[1];
+        APlayerController* Player1 = PlayerQueue[0];
+        APlayerController* Player2 = PlayerQueue[1];
 
-    //큐 비워주고
-    PlayerQueue.RemoveAt(0);
-    PlayerQueue.RemoveAt(0);
+        //큐 비워주고
+        PlayerQueue.RemoveAt(0);
+        PlayerQueue.RemoveAt(0);
+        ///Script/Engine.World'/Game/Test/Test.Test'
+        //TODO: 임시로 두명 접속되는지 확인하기
+        FString TravelCommand = SO::NetworkUtils::GetGameMapURL();
+        GetWorld()->ServerTravel(TravelCommand);
 
-    //TODO: 임시로 두명 접속되는지 확인하기
-    FString TravelCommand = SO::NetworkUtils::GetGameMapURL() + TEXT("?listen");
-    //GetWorld()->ServerTravel(TravelCommand);
-
-    Player1->ClientTravel(TravelCommand, TRAVEL_Absolute);
-    Player2->ClientTravel(TravelCommand, TRAVEL_Absolute);
+        //Player1->ClientTravel(TravelCommand, TRAVEL_Absolute);
+        //Player2->ClientTravel(TravelCommand, TRAVEL_Absolute);
 }
