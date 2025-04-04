@@ -6,16 +6,16 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "SOServerSubsystem.generated.h"
 
-USTRUCT(BlueprintType)
+USTRUCT()
 struct FPlayerSettings
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY()
 	FText PlayerName;
 
-	UPROPERTY(BlueprintReadWrite)
-	UMaterialInterface* PlayerMaterial;
+	UPROPERTY()
+	uint32 PlayerMaterialIdx;
 };
 
 /**
@@ -28,11 +28,23 @@ class SNAKE_ONLINE_API USOServerSubsystem : public UGameInstanceSubsystem
 
 public:
 	void AddPlayerToQueue(APlayerController* Player);
-	void AddPlayerToQueue(APlayerController* Player,FPlayerSettings* playerSetting);
+	void SetPlayerSetting(uint32 PlayerID, FPlayerSettings playerSetting);
 	
 	void TryMatchPlayers();
-
+public:
+	//Properties
+	void SetClientID(uint32 ID) { ClientUniqueID = ID; }
+	uint32 GetClientID() { return ClientUniqueID; }
+	uint32 GetNewClientID() { return ++LastClientUniqueID; }
+	FPlayerSettings GetPlayerSetting(uint32 id);
 private:
 	TArray<APlayerController*> PlayerQueue;
-	TMap<APlayerController*, FPlayerSettings> playerSettingMap;
+
+	//서버 관리용
+	UPROPERTY()
+	TMap<uint32, FPlayerSettings> playerSettingMap;
+	uint32 LastClientUniqueID =-1;
+
+	//클라이언트용
+	uint32 ClientUniqueID;
 };

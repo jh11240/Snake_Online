@@ -12,7 +12,7 @@
 #include "Net/UnrealNetwork.h"
 #include "SOTestCharacter.generated.h"
 
-
+class UWidgetComponent;
 
 UCLASS()
 class SNAKE_ONLINE_API ASOTestCharacter : public ACharacter
@@ -37,6 +37,7 @@ public:
 public:
 	UFUNCTION()
 	void SetSnakeMaterial(int32 materialIdx);
+
 protected:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	TObjectPtr<USpringArmComponent> SpringArm;
@@ -64,7 +65,13 @@ protected:
 protected:
 	UFUNCTION()
 	void UpdatePawnDataTable();
+protected:
+	UPROPERTY(EditAnywhere)
+	UWidgetComponent* NameTextComponent = nullptr;
 
+public: 
+	UFUNCTION(Client,reliable)
+	void SetNameWidget(const FText& txtName);
 protected:
 	//머리 몸통 관련
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
@@ -117,6 +124,8 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void CToSSetMaterial(UMaterialInterface* NewMaterial);
+	public:
+	void ServerSetMaterial(uint32 NewMaterialIdx);
 protected:
 	//몸통 위치 갱신
 	UFUNCTION()

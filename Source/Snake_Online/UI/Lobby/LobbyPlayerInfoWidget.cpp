@@ -9,6 +9,7 @@
 #include "EngineUtils.h" 
 #include "Lobby/LobbyPlayerController.h"
 #include "Lobby/LobbySnakeActor.h"
+#include "Subsystem/SOServerSubsystem.h"
 
 void ULobbyPlayerInfoWidget::NativeConstruct()
 {
@@ -55,6 +56,24 @@ void ULobbyPlayerInfoWidget::MatchStart()
     MatchingWaitThrobber->SetVisibility(ESlateVisibility::Visible);
     MatchingWaitText->SetText(FText::FromString(TEXT("랜덤 매칭 중...")));
 
+#pragma region player setting 중
+    uint32 id=0;
+        if (UGameInstance* gameInstance = GetGameInstance())
+        {
+            USOServerSubsystem* serverSystem = gameInstance->GetSubsystem<USOServerSubsystem>();
+            if (serverSystem)
+            {
+                id = serverSystem->GetClientID();
+                UE_LOG(LogTemp, Display, TEXT(" 매치 시작 : 현재 클라이언트 id : %d"),id);
+            }
+        }
+        FPlayerSettings playerSetting ;
+        if (Name.IsEmpty()) Name = FText::FromString("Default012");
+        playerSetting.PlayerName = Name;
+        playerSetting.PlayerMaterialIdx = LobbySnake->GetSnakeMaterial();
+
+        pc->CToSSetPlayerSetting(id,playerSetting);
+#pragma endregion
     pc->CToSAddPlayerQueue();
     UE_LOG(LogTemp, Warning, TEXT("Match making started!"));
 }

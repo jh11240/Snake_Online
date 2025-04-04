@@ -36,14 +36,15 @@ protected:
 	//Material
 	UPROPERTY(EditAnywhere, Category = "Materials")
 	TArray<UMaterialInterface*> Materials;
-	int32 MaterialSize = 0;
+	uint32 MaterialSize = 0;
 
-	void SetSnakeMaterial(int32 materialIdx);
-	int32 curIdx=0;
+	void SetSnakeMaterial(uint32 materialIdx);
+	uint32 curIdx=0;
 
 public:
 	void SetNextSnakeMaterial();
 	void SetPrevSnakeMaterial();
+	uint32 GetSnakeMaterial() { return curIdx; }
 	void SetNameText(FText InName);
 protected:
 	//몸통 위치 갱신

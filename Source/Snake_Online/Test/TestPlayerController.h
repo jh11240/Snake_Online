@@ -10,6 +10,7 @@ class UUserWidget;
 class InputAction;
 struct FInputActionValue;
 class UInputMappingContext;
+class ASOTestCharacter;
 /**
  * 
  */
@@ -27,7 +28,9 @@ public:
 protected:
 	UFUNCTION(Server, Unreliable)
 	void CToSMove(const FVector& Direction, float Value);
-	
+	UFUNCTION(Server,reliable)
+	void CToSSetPlayerInfo(ASOTestCharacter* playerCharacter,uint32 playerId);
+
 	void OnMove(const FInputActionValue& InputActionValue);
 
 	//혹시나 나중에 부스트 구현시 사용하려고

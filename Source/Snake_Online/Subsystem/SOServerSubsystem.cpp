@@ -15,14 +15,11 @@ void USOServerSubsystem::AddPlayerToQueue(APlayerController* Player)
 
     TryMatchPlayers();
 }
-void USOServerSubsystem::AddPlayerToQueue(APlayerController* Player, FPlayerSettings* playerSetting)
+void USOServerSubsystem::SetPlayerSetting(uint32 PlayerID, FPlayerSettings  playerSetting)
 {
-    UE_LOG(LogTemp, Warning, TEXT("AddPlayerToQueue 서버에서 실행됨!"));
-
-    if (!Player) return;
-    PlayerQueue.Add(Player);
-
-    TryMatchPlayers();
+    UE_LOG(LogTemp, Warning, TEXT("SetPlayerSetting 서버에서 실행됨!"));
+    playerSettingMap.Add(PlayerID, playerSetting );
+       //playerSettingMap[PlayerID] = playerSetting;
 }
 
 void USOServerSubsystem::TryMatchPlayers()
@@ -44,4 +41,16 @@ void USOServerSubsystem::TryMatchPlayers()
 
         //Player1->ClientTravel(TravelCommand, TRAVEL_Absolute);
         //Player2->ClientTravel(TravelCommand, TRAVEL_Absolute);
+}
+
+FPlayerSettings USOServerSubsystem::GetPlayerSetting(uint32 id)
+{
+    if(!playerSettingMap.Contains(id))
+    {
+        FPlayerSettings defaultSetting;
+        defaultSetting.PlayerName =FText::FromString( TEXT("Default123"));
+        defaultSetting.PlayerMaterialIdx = 0;
+        return defaultSetting;
+    }
+    return playerSettingMap[id];
 }

@@ -3,6 +3,8 @@
 
 #include "Test/SOTestCharacter.h"
 #include "Utils/SOUtils.h"
+#include "Components/WidgetComponent.h"
+#include "UI/PlayerNameUserWidget.h"
 
 // Sets default values
 ASOTestCharacter::ASOTestCharacter()
@@ -37,7 +39,22 @@ ASOTestCharacter::ASOTestCharacter()
 		bAlwaysRelevant = true;
 		bUseControllerRotationYaw = false;
 	}
-
+#pragma region NameUI 세팅
+	{
+		// HP Bar
+		{///Script/UMGEditor.WidgetBlueprint'/Game/UI/Lobby/SOPlayerName.SOPlayerName'
+			ConstructorHelpers::FClassFinder<UPlayerNameUserWidget> WidgetClass(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/UI/Lobby/SOPlayerName.SOPlayerName_C'"));
+			NameTextComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameWidgetComponent"));
+			NameTextComponent->SetupAttachment(HeadComponent);
+			NameTextComponent->SetRelativeLocation(FVector(0, 0, 150.0));
+			NameTextComponent->SetDrawSize(FVector2D(256.3, 17.0));
+			NameTextComponent->SetWidgetSpace(EWidgetSpace::Screen);
+			NameTextComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			check(WidgetClass.Class);
+			NameTextComponent->SetWidgetClass(WidgetClass.Class);
+		}
+	}
+#pragma endregion
 	//static mesh component 생성 - 머리 mesh 부분
 	{
 		//머리 컴퍼넌트
@@ -206,6 +223,15 @@ void ASOTestCharacter::UpdatePawnDataTable()
 		// 이 데이터를 통해서 클라 UCharacterMovementComponent::SmoothClientPosition_UpdateVisuals() 에서 Mesh의 위치를 바꾸고 있음.
 		// (Mesh->SetRelativeLocationAndRotation(NewRelTranslation, NewRelRotation, false, nullptr, GetTeleportType());)
 		CacheInitialMeshOffset(SnakeData->MeshTransform.GetTranslation(), SnakeData->MeshTransform.GetRotation().Rotator());
+	}
+}
+
+void ASOTestCharacter::SetNameWidget_Implementation(const FText& txtName)
+{
+	UPlayerNameUserWidget* playerNameWidget = Cast<UPlayerNameUserWidget>(NameTextComponent->GetWidget());
+	if (playerNameWidget)
+	{
+		playerNameWidget->SetNameText(txtName);
 	}
 }
 
@@ -394,6 +420,12 @@ void ASOTestCharacter::MoveBodySegments(float DeltaTime)
 		FVector newLocation = BodyComponents[i]->GetComponentLocation() + direction * moveSpeed * DeltaTime; // 이동 계산
 		BodyComponents[i]->SetWorldLocation(newLocation, true);
 	}
+}
+void ASOTestCharacter::ServerSetMaterial(uint32 NewMaterialIdx)
+{
+	if(HasAuthority())
+	ReplicatedMaterial = Materials[NewMaterialIdx];
+
 }
 //전체 몸 기록하는 함수 
 //

@@ -112,6 +112,22 @@ void ATestPlayerController::OnRep_Pawn()
     ASOTestCharacter* ControlledCharacter = Cast<ASOTestCharacter>(GetPawn());
     if (ControlledCharacter)
     {
+        UGameInstance* gameInstance = GetGameInstance();
+        if (gameInstance)
+        {
+            USOServerSubsystem* subSystem = gameInstance->GetSubsystem<USOServerSubsystem>();
+            if (subSystem)
+            {
+                uint32 id = subSystem->GetClientID();
+                UE_LOG(LogTemp, Display, TEXT("game level에서 호출 id : %d"),id);
+                CToSSetPlayerInfo(ControlledCharacter, id);
+            }
+            else
+                check(false);
+        }
+        else
+            check(false);
+
         //moveSpeed = ControlledCharacter->GetMoveSpeed();
         //if (LobbyWidget && createdLobbyWidget == nullptr)
         //{
@@ -154,6 +170,23 @@ void ATestPlayerController::CToSMove_Implementation(const FVector& Direction, fl
 }
 
 
+
+void ATestPlayerController::CToSSetPlayerInfo_Implementation(ASOTestCharacter* character,uint32 clientID)
+{
+    
+        UGameInstance* gameInstance = GetGameInstance();
+        if (gameInstance)
+        {
+            USOServerSubsystem* subSystem = gameInstance->GetSubsystem<USOServerSubsystem>();
+            if (subSystem)
+            {
+                FPlayerSettings playerSetting = subSystem->GetPlayerSetting(clientID);
+                UE_LOG(LogTemp, Display, TEXT("SErver에서 전달받은 clientId : %d"),clientID);
+                character->SetNameWidget(playerSetting.PlayerName);
+                character->ServerSetMaterial(playerSetting.PlayerMaterialIdx);
+            }
+        }
+}
 
 void ATestPlayerController::OnMove(const FInputActionValue& InputActionValue)
 {

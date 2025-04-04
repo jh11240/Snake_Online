@@ -80,7 +80,7 @@ void ALobbySnakeActor::BeginPlay()
 		BodyMoveRefreshRate = 1.f;
 }
 
-void ALobbySnakeActor::SetSnakeMaterial(int32 materialIdx)
+void ALobbySnakeActor::SetSnakeMaterial(uint32 materialIdx)
 {
 	UMaterialInterface* materialToSet = Materials[materialIdx];
 	HeadComponent->SetMaterial(0, materialToSet);
