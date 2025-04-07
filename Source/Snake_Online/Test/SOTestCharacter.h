@@ -33,7 +33,7 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	void InitSnake();
 public:
 	UFUNCTION()
 	void SetSnakeMaterial(int32 materialIdx);
@@ -59,6 +59,21 @@ public:
 
 	UFUNCTION()
 	void OnGameOver();
+	UFUNCTION(Client, Reliable)
+	void SToCGameOver();
+
+	bool IsInvincible() { return isInvincible; }
+	void SetInvincible(bool inVal) {if(HasAuthority()) isInvincible = inVal; }
+	float GetInvincibleTime() { return BeginInivincibleTime; }
+protected:
+	UPROPERTY(replicated)
+	bool isInvincible;
+	UPROPERTY()
+	float BeginInivincibleTime = 5.0f;
+	UPROPERTY()
+	bool isGameOver=false;
+	UPROPERTY()
+	bool isPossessed=false;
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -70,7 +85,7 @@ protected:
 	UWidgetComponent* NameTextComponent = nullptr;
 
 public: 
-	UFUNCTION(Client,reliable)
+	UFUNCTION(NetMulticast,Reliable)
 	void SetNameWidget(const FText& txtName);
 protected:
 	//머리 몸통 관련
@@ -102,6 +117,8 @@ protected:
 
 	UFUNCTION()
 	void OnRep_ConsumedFood();
+
+
 
 public: 
 	//먹이 먹었을 때
@@ -140,6 +157,7 @@ protected:
 	float BodyMoveRefreshRate = .5f;;
 	float curSec = 0;
 	float moveSpeed = 100.f;
+
 public:
 	float GetMoveSpeed() { return moveSpeed; }
 protected:
@@ -151,4 +169,5 @@ protected:
 	/*TODO: 만약된다면 위에 미니맵 처리
 	UPROPERTY(VisibleAnywhere)
 	UPaperSpriteComponent* MinimapSpriteComponent;*/
+
 };

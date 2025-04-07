@@ -19,8 +19,9 @@ class SNAKE_ONLINE_API ASOTestGameModeBase : public AGameModeBase
 public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-private:
 	void SpawnFood();
+	void SpawnFood(FVector SpawnLoc);
+private:
 	FVector GetRandomLocation();
 
 	FVector MinBound= FVector(-150.000000, -250.000000, 140.000000);

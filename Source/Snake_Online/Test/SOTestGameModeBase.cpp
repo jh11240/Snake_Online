@@ -59,6 +59,25 @@ void ASOTestGameModeBase::SpawnFood()
     }
 }
 
+void ASOTestGameModeBase::SpawnFood(FVector SpawnLoc)
+{
+    UE_LOG(LogTemp, Display, TEXT("음식 스폰 시작!"));
+    // 서버 권한인지 검사
+    if (HasAuthority())
+    {
+        // 먹이 스폰 위치를 랜덤으로 계산
+
+        FRotator SpawnRotation = FRotator::ZeroRotator;
+        // 먹이 액터 생성 (스폰)
+        ASnakeFood* NewFood = GetWorld()->SpawnActor<ASnakeFood>(ASnakeFood::StaticClass(), SpawnLoc, SpawnRotation);
+        if (NewFood)
+        {
+            // 생성 후
+            NewFood->SetFoodScore(1);
+        }
+    }
+}
+
 FVector ASOTestGameModeBase::GetRandomLocation()
 {
     FBox SpawnBox(MinBound, MaxBound);

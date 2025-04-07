@@ -35,6 +35,7 @@ public:
 	//Properties
 	void SetClientID(uint32 ID) { ClientUniqueID = ID; }
 	uint32 GetClientID() { return ClientUniqueID; }
+	uint32 GetStartDirIdx() { return startDir++; }
 	uint32 GetNewClientID() { return ++LastClientUniqueID; }
 	FPlayerSettings GetPlayerSetting(uint32 id);
 private:
@@ -44,6 +45,7 @@ private:
 	UPROPERTY()
 	TMap<uint32, FPlayerSettings> playerSettingMap;
 	uint32 LastClientUniqueID =-1;
+	uint32 startDir = 0;
 
 	//클라이언트용
 	uint32 ClientUniqueID;

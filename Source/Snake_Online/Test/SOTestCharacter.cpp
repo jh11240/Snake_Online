@@ -2,8 +2,11 @@
 
 
 #include "Test/SOTestCharacter.h"
+#include "Test/SOTestGameModeBase.h"
+#include "Test/TestPlayerController.h"
 #include "Utils/SOUtils.h"
 #include "Components/WidgetComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "UI/PlayerNameUserWidget.h"
 
 // Sets default values
@@ -39,22 +42,7 @@ ASOTestCharacter::ASOTestCharacter()
 		bAlwaysRelevant = true;
 		bUseControllerRotationYaw = false;
 	}
-#pragma region NameUI 세팅
-	{
-		// HP Bar
-		{///Script/UMGEditor.WidgetBlueprint'/Game/UI/Lobby/SOPlayerName.SOPlayerName'
-			ConstructorHelpers::FClassFinder<UPlayerNameUserWidget> WidgetClass(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/UI/Lobby/SOPlayerName.SOPlayerName_C'"));
-			NameTextComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameWidgetComponent"));
-			NameTextComponent->SetupAttachment(HeadComponent);
-			NameTextComponent->SetRelativeLocation(FVector(0, 0, 150.0));
-			NameTextComponent->SetDrawSize(FVector2D(256.3, 17.0));
-			NameTextComponent->SetWidgetSpace(EWidgetSpace::Screen);
-			NameTextComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			check(WidgetClass.Class);
-			NameTextComponent->SetWidgetClass(WidgetClass.Class);
-		}
-	}
-#pragma endregion
+
 	//static mesh component 생성 - 머리 mesh 부분
 	{
 		//머리 컴퍼넌트
@@ -91,6 +79,23 @@ ASOTestCharacter::ASOTestCharacter()
 		FTransform CameraTransform = FTransform(RotationQuat, Translation, FVector::OneVector);
 		Camera->SetRelativeTransform(CameraTransform);
 	}
+
+#pragma region NameUI 세팅
+	{
+		// HP Bar
+		{///Script/UMGEditor.WidgetBlueprint'/Game/UI/Lobby/SOPlayerName.SOPlayerName'
+			ConstructorHelpers::FClassFinder<UPlayerNameUserWidget> WidgetClass(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/UI/Lobby/SOPlayerName.SOPlayerName_C'"));
+			NameTextComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameWidgetComponent"));
+			NameTextComponent->SetupAttachment(HeadComponent);
+			NameTextComponent->SetRelativeLocation(FVector(0, 0, 150.0));
+			NameTextComponent->SetDrawSize(FVector2D(256.3, 17.0));
+			NameTextComponent->SetWidgetSpace(EWidgetSpace::Screen);
+			NameTextComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			check(WidgetClass.Class);
+			NameTextComponent->SetWidgetClass(WidgetClass.Class);
+		}
+	}
+#pragma endregion
 
 	//캡슐컴퍼넌트랑 기본 mesh 꺼주기
 	{
@@ -157,6 +162,17 @@ void ASOTestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 }
 
+void ASOTestCharacter::InitSnake()
+{
+	if (HasAuthority()) {
+		UE_LOG(LogTemp, Display, TEXT("%s, snake property들 세팅 중 게임오버랑 무적처리"),ANSI_TO_TCHAR(__FUNCTION__));
+		SetInvincible(true);
+		isGameOver = false;
+		isPossessed = true;
+
+	}
+}
+
 void ASOTestCharacter::SetSnakeMaterial(int32 materialIdx)
 {
 	UMaterialInterface* materialToSet = Materials[materialIdx];
@@ -166,13 +182,16 @@ void ASOTestCharacter::SetSnakeMaterial(int32 materialIdx)
 void ASOTestCharacter::OnHeadOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (HasAuthority()) {
+		if (OtherActor == this) return;
 		//벽에 닿았을 때
 		if (OtherComp->ComponentHasTag(SO::TagName::Wall))
 		{
+			UE_LOG(LogTemp, Warning, TEXT("%s 벽에 닿음"), ANSI_TO_TCHAR(__FUNCTION__));
 			OnGameOver();
 		}
 		else if(OtherComp->ComponentHasTag(SO::TagName::Body))
 		{
+			UE_LOG(LogTemp, Warning, TEXT("%s 몸에 닿음"), ANSI_TO_TCHAR(__FUNCTION__));
 			OnGameOver();
 		}
 
@@ -182,8 +201,60 @@ void ASOTestCharacter::OnHeadOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 void ASOTestCharacter::OnGameOver()
 {
+	if (!HasAuthority()) return;
+	if (!isPossessed)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s, 뱀 init단계전에 게임오버 진입함!"), ANSI_TO_TCHAR(__FUNCTION__));
+		return;
+	}
+	if (IsInvincible() || isGameOver)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("invincible State OR GameOver!"));
+		return;
+	}
+	isGameOver = true;
 	GetCharacterMovement()->Velocity = FVector::Zero();
-	UE_LOG(LogTemp, Warning, TEXT("GameOver"));
+	UE_LOG(LogTemp, Warning, TEXT("%s 시퀀스시작"), ANSI_TO_TCHAR(__FUNCTION__));
+	if (UWorld* world = GetWorld())
+	{
+		ASOTestGameModeBase* GameMode = Cast<ASOTestGameModeBase>(UGameplayStatics::GetGameMode(world));
+		if (GameMode) {
+			for (const FVector& elem : BodyComponentsLoc)
+				GameMode->SpawnFood(elem);
+			NameTextComponent->SetVisibility(false);
+			HeadComponent->SetVisibility(false);
+			HeadComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			for (UStaticMeshComponent* elem : BodyComponents) {
+				elem->SetVisibility(false);
+				elem->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ASOTestCharacter :: OnGameOver함수 game mode못찾음"));
+			check(false);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ASOTestCharacter :: OnGameOver함수 world 못찾음"));
+		check(false);
+	}
+	SToCGameOver();
+
+}
+
+void ASOTestCharacter::SToCGameOver_Implementation()
+{
+	UE_LOG((LogTemp), Display, TEXT("Game Over UI open"));
+	if (AController* tmpController = GetController()) {
+		
+		ATestPlayerController* testController = Cast<ATestPlayerController>(tmpController);
+		if(testController)
+		testController->GameOver();
+		else
+			UE_LOG(LogTemp, Warning, TEXT("%s , controller 없음 "), ANSI_TO_TCHAR(__FUNCTION__));
+	}
 }
 
 void ASOTestCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -193,6 +264,7 @@ void ASOTestCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ThisClass, ReplicatedMaterial);
 	DOREPLIFETIME(ThisClass, BodyComponents);
 	DOREPLIFETIME(ThisClass, ConsumedFood);
+	DOREPLIFETIME(ThisClass, isInvincible);
 }
 
 void ASOTestCharacter::UpdatePawnDataTable()
@@ -206,7 +278,6 @@ void ASOTestCharacter::UpdatePawnDataTable()
 		UCharacterMovementComponent* Movement = GetCharacterMovement();
 		//Movement->RotationRate = CharacterData->RotationRate;
 		Movement->bOrientRotationToMovement = true;
-		Movement->GetNavAgentPropertiesRef().bCanCrouch = true;
 		Movement->MaxWalkSpeed = SnakeData->MovementMaxSpeed;
 		Movement->SetIsReplicated(true);
 	}

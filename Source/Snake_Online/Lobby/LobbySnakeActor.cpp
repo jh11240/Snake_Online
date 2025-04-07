@@ -194,7 +194,7 @@ void ALobbySnakeActor::AddBody()
 
 #pragma region 새 노드의 위치 설정
 	FVector SpawnLocation = FVector::ZeroVector;
-	FVector CurrentDirection = FVector(0,-1,0);
+	FVector CurrentDirection = FVector(0,1,0);
 
 	if (BodyDiameter == 0)
 	{

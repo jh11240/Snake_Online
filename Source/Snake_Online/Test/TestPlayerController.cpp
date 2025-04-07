@@ -20,10 +20,10 @@
 ATestPlayerController::ATestPlayerController()
 {
     //// 블루프린트 클래스를 찾고 TSubclassOf에 할당
-    static ConstructorHelpers::FClassFinder<UUserWidget> WidgetClassFinder(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/UI/SOLogin.SOLogin_C'"));
+    static ConstructorHelpers::FClassFinder<UUserWidget> WidgetClassFinder(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/UI/Lobby/SOGameOver.SOGameOver_C'"));
     if (WidgetClassFinder.Succeeded())
     {
-        LobbyWidget = WidgetClassFinder.Class;
+        GameOverWidget = WidgetClassFinder.Class;
         UE_LOG(LogTemp, Warning, TEXT("UserWidgetClass successfully assigned."));
     }
     else
@@ -54,6 +54,26 @@ const UInputAction* GetInputActionFromName(UInputMappingContext* IMC, const FNam
     return nullptr;
 }
 
+
+void ATestPlayerController::OnPossess(APawn* pawn)
+{
+    Super::OnPossess(pawn);
+
+    ASOTestCharacter* Snake = Cast<ASOTestCharacter>(pawn);
+    if (Snake)
+    {
+        Snake->InitSnake();
+                // 일정 시간 후 무적 해제
+        FTimerHandle Handle;
+        GetWorld()->GetTimerManager().SetTimer(Handle, [Snake]()
+        {
+            Snake->SetInvincible(false);
+        }, Snake->GetInvincibleTime(), false);
+    }
+
+    CToSMove(CalStartDir(), 1);
+
+}
 
 void ATestPlayerController::BeginPlay()
 {
@@ -120,7 +140,8 @@ void ATestPlayerController::OnRep_Pawn()
             {
                 uint32 id = subSystem->GetClientID();
                 UE_LOG(LogTemp, Display, TEXT("game level에서 호출 id : %d"),id);
-                CToSSetPlayerInfo(ControlledCharacter, id);
+                SetPlayerInfo(ControlledCharacter, id);
+
             }
             else
                 check(false);
@@ -129,19 +150,37 @@ void ATestPlayerController::OnRep_Pawn()
             check(false);
 
         //moveSpeed = ControlledCharacter->GetMoveSpeed();
-        //if (LobbyWidget && createdLobbyWidget == nullptr)
-        //{
-        //    createdLobbyWidget = Cast<UUserWidget>(CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));
-        //    if (createdLobbyWidget)
-        //    {
-        //        createdLobbyWidget->AddToViewport(); // 화면에 위젯 표시
-        //    }
-        //}
+        if (GameOverWidget && createdGameOverWidget == nullptr)
+        {
+            createdGameOverWidget = Cast<UUserWidget>(CreateWidget<UUserWidget>(GetWorld(), GameOverWidget));
+            if (createdGameOverWidget)
+            {
+                createdGameOverWidget->AddToViewport(); // 화면에 위젯 표시
+            }
+            createdGameOverWidget->SetVisibility(ESlateVisibility::Hidden);
+        }
         //// Character 초기화 로직
         //USOTESTUserWidget* tmpWidget = Cast<USOTESTUserWidget>(createdLobbyWidget);
         //tmpWidget->OnChangeMaterial.AddUniqueDynamic(ControlledCharacter, &ASOTestCharacter::SetSnakeMaterial);
     }
 }
+
+void ATestPlayerController::SetPlayerInfo(ASOTestCharacter* playerCharacter, uint32 playerId)
+{
+    //서버에서 처리할 정보들 (현재는 material만)
+    CToSSetPlayerInfo(playerCharacter, playerId);
+    
+}
+
+void ATestPlayerController::GameOver()
+{
+    if (HasAuthority())
+    {
+        return;
+    }
+    createdGameOverWidget->SetVisibility(ESlateVisibility::Visible);
+}
+
 
 
 
@@ -182,8 +221,8 @@ void ATestPlayerController::CToSSetPlayerInfo_Implementation(ASOTestCharacter* c
             {
                 FPlayerSettings playerSetting = subSystem->GetPlayerSetting(clientID);
                 UE_LOG(LogTemp, Display, TEXT("SErver에서 전달받은 clientId : %d"),clientID);
-                character->SetNameWidget(playerSetting.PlayerName);
                 character->ServerSetMaterial(playerSetting.PlayerMaterialIdx);
+                character->SetNameWidget(playerSetting.PlayerName);
             }
         }
 }
@@ -228,4 +267,12 @@ void ATestPlayerController::OnMove(const FInputActionValue& InputActionValue)
     //}
     //ControlledPawn->AddMovementInput(ForwardVector, ActionValue.X * moveSpeed);
     //ControlledPawn->AddMovementInput(RightVector, ActionValue.Y * moveSpeed);
+}
+
+FVector ATestPlayerController::CalStartDir()
+{
+    USOServerSubsystem* serverSystem = GetGameInstance()->GetSubsystem<USOServerSubsystem>();
+    uint32 dirIdx = serverSystem->GetStartDirIdx();
+    FVector startDir = FVector(dirX[dirIdx], dirY[dirIdx], 0);
+    return startDir;
 }

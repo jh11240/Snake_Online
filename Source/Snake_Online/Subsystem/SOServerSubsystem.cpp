@@ -36,7 +36,11 @@ void USOServerSubsystem::TryMatchPlayers()
         PlayerQueue.RemoveAt(0);
         ///Script/Engine.World'/Game/Test/Test.Test'
         //TODO: 임시로 두명 접속되는지 확인하기
+        
+
         FString TravelCommand = SO::NetworkUtils::GetGameMapURL();
+// UE_EDITOR
+
         GetWorld()->ServerTravel(TravelCommand);
 
         //Player1->ClientTravel(TravelCommand, TRAVEL_Absolute);
