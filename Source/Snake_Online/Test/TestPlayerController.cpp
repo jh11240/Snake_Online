@@ -89,26 +89,7 @@ void ATestPlayerController::BeginPlay()
     //TODO: Map처리
     if (IsLocalController()) // 로컬 플레이어 컨트롤러인지 확인
     {
-        //잘됨
-        //// 현재 레벨 경로를 가져와 비교
-        //FString CurrentLevelName = GetWorld()->GetOutermost()->GetName();
-        //FString TargetLevelName = TEXT("/Game/Test/Test");
 
-        //if (CurrentLevelName.Equals(TargetLevelName))
-        //{
-        //    return;
-        //// 추가 로직을 여기에 작성
-        //}
-
-        //if (LobbyWidget && createdLobbyWidget == nullptr) // UMG 블루프린트 클래스 확인
-        //{
-        //    createdLobbyWidget =Cast<UUserWidget>( CreateWidget<UUserWidget>(GetWorld(), LobbyWidget));
-        //    if (createdLobbyWidget)
-        //    {
-        //        createdLobbyWidget->AddToViewport(); // 화면에 위젯 표시
-        //    }
-
-        //}
     }
 }
 
@@ -169,7 +150,6 @@ void ATestPlayerController::SetPlayerInfo(ASOTestCharacter* playerCharacter, uin
 {
     //서버에서 처리할 정보들 (현재는 material만)
     CToSSetPlayerInfo(playerCharacter, playerId);
-    
 }
 
 void ATestPlayerController::GameOver()
@@ -184,7 +164,6 @@ void ATestPlayerController::GameOver()
 
 
 
-//TODO : 키입력때 호출시 Packet 너무 많이 날려서 무시하는듯..?
 void ATestPlayerController::CToSMove_Implementation(const FVector& Direction, float Value)
 {
     APawn* ControlledPawn = GetPawn();

@@ -14,6 +14,7 @@ ASOTestCharacter::ASOTestCharacter()
 {
  	
 	PrimaryActorTick.bCanEverTick = true;
+#pragma region datatable읽어와서 mesh값이랑 material 저장중
 	{
 			static ConstructorHelpers::FObjectFinder<UDataTable> Asset(TEXT("/Script/Engine.DataTable'/Game/Test/Datatable/Snake.Snake'"));
 			check(Asset.Object);
@@ -34,16 +35,18 @@ ASOTestCharacter::ASOTestCharacter()
 			SnakeDataTableRowHandle.RowName = "Green";
 
 	}
+#pragma endregion
 
-	//복제 properties 처리
+#pragma region 복제 properties 처리
 	{
 		bReplicates = true;
 		SetReplicateMovement(true);
 		bAlwaysRelevant = true;
 		bUseControllerRotationYaw = false;
 	}
+#pragma endregion
 
-	//static mesh component 생성 - 머리 mesh 부분
+#pragma region static mesh component 생성 - 머리 mesh 부분
 	{
 		//머리 컴퍼넌트
 		HeadComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
@@ -57,7 +60,9 @@ ASOTestCharacter::ASOTestCharacter()
 
 		//SnakeStaticMeshComponent->SetEnableGravity(false);
 	}
+#pragma endregion
 
+#pragma region Spring arm이랑 camera 세팅
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
 	//spring Arm이랑 camera 처리
@@ -79,6 +84,7 @@ ASOTestCharacter::ASOTestCharacter()
 		FTransform CameraTransform = FTransform(RotationQuat, Translation, FVector::OneVector);
 		Camera->SetRelativeTransform(CameraTransform);
 	}
+#pragma endregion
 
 #pragma region NameUI 세팅
 	{
@@ -97,7 +103,7 @@ ASOTestCharacter::ASOTestCharacter()
 	}
 #pragma endregion
 
-	//캡슐컴퍼넌트랑 기본 mesh 꺼주기
+#pragma region 캡슐컴퍼넌트랑 기본 mesh 꺼주기
 	{
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		GetCapsuleComponent()->SetEnableGravity(false);
@@ -105,12 +111,7 @@ ASOTestCharacter::ASOTestCharacter()
 		GetMesh()->SetEnableGravity(false);
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
-}
-
-void ASOTestCharacter::OnConstruction(const FTransform& Transform)
-{
-	Super::OnConstruction(Transform);
-
+#pragma endregion
 }
 
 // Called when the game starts or when spawned
@@ -125,11 +126,9 @@ void ASOTestCharacter::BeginPlay()
 		BodyComponentsLoc.Add(headWorldLoc);
 		for (int i = 0; i < InitialSnakeBodyCnt; i++)
 		AddBody();
-		if (BodyDiameter != 0)
-			BodyMoveRefreshRate = BodyDiameter / moveSpeed;
-		else
-			BodyMoveRefreshRate = 1.f;
 	}
+	// 늦게 복제되면 기존 복사된 클라의 name ui 변경 함수 호출못받아서 명시적으로 호출
+	OnRep_NameUI();
 	// 클라중 내 클라만(ROLE_AutonomousProxy)
 	/*else if (GetLocalRole() == ROLE_AutonomousProxy)
 	{
@@ -150,7 +149,7 @@ void ASOTestCharacter::Tick(float DeltaTime)
 			return;
 		}
 		SetBodyLocation();
-		curSec = 0;
+		curSec -= BodyMoveRefreshRate;
 	}
 #pragma endregion
 }
@@ -173,11 +172,8 @@ void ASOTestCharacter::InitSnake()
 	}
 }
 
-void ASOTestCharacter::SetSnakeMaterial(int32 materialIdx)
-{
-	UMaterialInterface* materialToSet = Materials[materialIdx];
-	CToSSetMaterial(materialToSet);
-}
+
+#pragma region 충돌, 게임오버, 무적 관련 처리
 
 void ASOTestCharacter::OnHeadOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -218,15 +214,19 @@ void ASOTestCharacter::OnGameOver()
 	if (UWorld* world = GetWorld())
 	{
 		ASOTestGameModeBase* GameMode = Cast<ASOTestGameModeBase>(UGameplayStatics::GetGameMode(world));
-		if (GameMode) {
-			for (const FVector& elem : BodyComponentsLoc)
-				GameMode->SpawnFood(elem);
+		if (GameMode) 
+		{
 			NameTextComponent->SetVisibility(false);
 			HeadComponent->SetVisibility(false);
 			HeadComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			for (UStaticMeshComponent* elem : BodyComponents) {
 				elem->SetVisibility(false);
 				elem->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			}
+
+			for (const FVector& elem : BodyComponentsLoc)
+			{
+				GameMode->SpawnFood(elem);
 			}
 		}
 		else
@@ -256,6 +256,8 @@ void ASOTestCharacter::SToCGameOver_Implementation()
 			UE_LOG(LogTemp, Warning, TEXT("%s , controller 없음 "), ANSI_TO_TCHAR(__FUNCTION__));
 	}
 }
+#pragma endregion
+
 
 void ASOTestCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -265,6 +267,7 @@ void ASOTestCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ThisClass, BodyComponents);
 	DOREPLIFETIME(ThisClass, ConsumedFood);
 	DOREPLIFETIME(ThisClass, isInvincible);
+	DOREPLIFETIME(ThisClass, NameUIText);
 }
 
 void ASOTestCharacter::UpdatePawnDataTable()
@@ -297,15 +300,31 @@ void ASOTestCharacter::UpdatePawnDataTable()
 	}
 }
 
-void ASOTestCharacter::SetNameWidget_Implementation(const FText& txtName)
+#pragma region 이름 UI 관련
+void ASOTestCharacter::OnRep_NameUI()
 {
 	UPlayerNameUserWidget* playerNameWidget = Cast<UPlayerNameUserWidget>(NameTextComponent->GetWidget());
 	if (playerNameWidget)
 	{
-		playerNameWidget->SetNameText(txtName);
+		playerNameWidget->SetNameText(NameUIText);
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("%s, ui 이름 설정하는데 ui 못찾음"),ANSI_TO_TCHAR(__FUNCTION__));
+		return;
 	}
 }
 
+void ASOTestCharacter::SetNameWidget(const FText& txtName)
+{
+	//서버 전용 -> name uiwidget의 이름 변경
+	if(HasAuthority())
+	NameUIText= txtName;
+	
+}
+#pragma endregion
+
+
+#pragma region 몸통 관리
 void ASOTestCharacter::AddBody()
 {
 
@@ -437,6 +456,9 @@ FVector ASOTestCharacter::Get8SideDir()
 
 }
 
+#pragma endregion
+
+#pragma region 음식 처리 관련 (food)
 void ASOTestCharacter::OnRep_ConsumedFood()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Consumed Food"));
@@ -464,20 +486,9 @@ void ASOTestCharacter::AddConsumedFood(int food)
 	}
 }
 
-void ASOTestCharacter::OnRep_Material()
-{
-	HeadComponent->SetMaterial(0, ReplicatedMaterial);
-	for (UStaticMeshComponent* elem : BodyComponents)
-	{
-		if (!elem || !elem->IsRegistered())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Component is not registered or nullptr"));
-			continue;
-		}
-		elem->SetMaterial(0, ReplicatedMaterial);
-	}
-}
+#pragma endregion
 
+#pragma region 몸통 이동 로직 함수들
 void ASOTestCharacter::MoveBodySegments(float DeltaTime)
 {
 	 
@@ -492,12 +503,6 @@ void ASOTestCharacter::MoveBodySegments(float DeltaTime)
 		BodyComponents[i]->SetWorldLocation(newLocation, true);
 	}
 }
-void ASOTestCharacter::ServerSetMaterial(uint32 NewMaterialIdx)
-{
-	if(HasAuthority())
-	ReplicatedMaterial = Materials[NewMaterialIdx];
-
-}
 //전체 몸 기록하는 함수 
 //
 void ASOTestCharacter::SetBodyLocation()
@@ -509,10 +514,39 @@ void ASOTestCharacter::SetBodyLocation()
 		BodyComponentsLoc[i + 1] = BodyComponents[i]->GetComponentLocation();
 	}
 }
+#pragma endregion
+
+#pragma region Material 처리 관련 함수들
+void ASOTestCharacter::SetSnakeMaterial(int32 materialIdx)
+{
+	UMaterialInterface* materialToSet = Materials[materialIdx];
+	CToSSetMaterial(materialToSet);
+}
+
+void ASOTestCharacter::OnRep_Material()
+{
+	HeadComponent->SetMaterial(0, ReplicatedMaterial);
+	for (UStaticMeshComponent* elem : BodyComponents)
+	{
+		if (!elem || !elem->IsRegistered())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Component is not registered or nullptr"));
+			continue;
+		}
+		elem->SetMaterial(0, ReplicatedMaterial);
+	}
+}
+void ASOTestCharacter::ServerSetMaterial(uint32 NewMaterialIdx)
+{
+	if(HasAuthority())
+	ReplicatedMaterial = Materials[NewMaterialIdx];
+
+}
 
 void ASOTestCharacter::CToSSetMaterial_Implementation(UMaterialInterface* NewMaterial)
 {
 	//서버는 메테리얼 정보 필요 x 클라에서 처리해야함
 	ReplicatedMaterial = NewMaterial;
 }
+#pragma endregion
 

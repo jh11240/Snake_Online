@@ -24,8 +24,6 @@ public:
 	ASOTestCharacter();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void BeginPlay() override;
 
 public:	
@@ -33,19 +31,27 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
+	//뱀 상태 초기화 -> playercontrolller onpossess에서 호출
 	void InitSnake();
-public:
-	UFUNCTION()
-	void SetSnakeMaterial(int32 materialIdx);
 
 protected:
+	//카메라와 스프링 암
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	TObjectPtr<USpringArmComponent> SpringArm;
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	TObjectPtr<UCameraComponent> Camera;
-public:
 
+protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+protected:
+	UFUNCTION()
+	void UpdatePawnDataTable();
+
+#pragma region 충돌, 게임오버, 무적 관련 처리
+public:
 	UFUNCTION()
 	void OnHeadOverlap
 	(
@@ -63,30 +69,37 @@ public:
 	void SToCGameOver();
 
 	bool IsInvincible() { return isInvincible; }
-	void SetInvincible(bool inVal) {if(HasAuthority()) isInvincible = inVal; }
+	void SetInvincible(bool inVal) {if(HasAuthority())
+		UE_LOG(LogTemp, Display, TEXT("%s, 무적 상태 변경"),ANSI_TO_TCHAR(__FUNCTION__));
+		isInvincible = inVal; }
 	float GetInvincibleTime() { return BeginInivincibleTime; }
 protected:
 	UPROPERTY(replicated)
 	bool isInvincible;
+
 	UPROPERTY()
-	float BeginInivincibleTime = 5.0f;
+	float BeginInivincibleTime = 2.5f;
 	UPROPERTY()
 	bool isGameOver=false;
 	UPROPERTY()
 	bool isPossessed=false;
-protected:
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+#pragma endregion
 
-protected:
-	UFUNCTION()
-	void UpdatePawnDataTable();
+#pragma region 이름 UI 관련
 protected:
 	UPROPERTY(EditAnywhere)
 	UWidgetComponent* NameTextComponent = nullptr;
 
 public: 
-	UFUNCTION(NetMulticast,Reliable)
+	UFUNCTION()
 	void SetNameWidget(const FText& txtName);
+	UPROPERTY(ReplicatedUsing = OnRep_NameUI)
+	FText NameUIText;
+	UFUNCTION()
+	void OnRep_NameUI();
+#pragma endregion
+
+#pragma region 머리와 몸통 관리
 protected:
 	//머리 몸통 관련
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
@@ -104,6 +117,9 @@ protected:
 
 	//현재 snake 방향 관련
 	FVector Get8SideDir();
+#pragma endregion
+
+#pragma region 점수처리 (Food 관련)
 protected:
 	//점수 처리
 
@@ -127,6 +143,12 @@ public:
 	//지금은 아니지만 추후 부스트 구현시 필요
 	UFUNCTION()
 	void RemoveConsumedFood(int food) { ConsumedFood -= food; }
+#pragma endregion
+
+#pragma region Material 세팅 관련
+public:
+		UFUNCTION()
+		void SetSnakeMaterial(int32 materialIdx);
 protected:
 	//Material 처리
 
@@ -143,6 +165,9 @@ protected:
 	void CToSSetMaterial(UMaterialInterface* NewMaterial);
 	public:
 	void ServerSetMaterial(uint32 NewMaterialIdx);
+#pragma endregion
+
+#pragma region 몸통 이동 관련
 protected:
 	//몸통 위치 갱신
 	UFUNCTION()
@@ -154,12 +179,14 @@ protected:
 	
 	TArray<FVector> BodyComponentsLoc;
 
-	float BodyMoveRefreshRate = .5f;;
+	const float BodyMoveRefreshRate = .5f;;
 	float curSec = 0;
 	float moveSpeed = 100.f;
 
 public:
 	float GetMoveSpeed() { return moveSpeed; }
+#pragma endregion
+
 protected:
 	//data table처리
 	//UPROPERTY(ReplicatedUsing = OnRep_UpdatePawnDataTable, EditAnywhere, meta = (RowType = "/Script/KDT3D.SnakeTableRow"))

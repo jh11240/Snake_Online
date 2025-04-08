@@ -5,6 +5,7 @@
 #include "Components/Button.h"
 #include "Utils/NetworkUtils.h"
 #include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
 
 
 void UTitleUserWidget::NativeConstruct()
@@ -22,7 +23,8 @@ void UTitleUserWidget::ServerConnect()
         // 로컬 컨트롤러인지 확인 후 서버로 연결
         if (PlayerController->IsLocalController())
         {
-            PlayerController->ClientTravel(SO::NetworkUtils::GetServerURL(), TRAVEL_Absolute);
+            UGameplayStatics::OpenLevel(GetWorld(), FName(SO::NetworkUtils::GetServerURL()));
+            //PlayerController->ClientTravel(SO::NetworkUtils::GetServerURL(), TRAVEL_Absolute);
         }
     }
 }
