@@ -7,6 +7,7 @@
 #include "Utils/SOUtils.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Subsystem/SOServerSubsystem.h"
 #include "UI/PlayerNameUserWidget.h"
 
 // Sets default values
@@ -211,6 +212,7 @@ void ASOTestCharacter::OnGameOver()
 	isGameOver = true;
 	GetCharacterMovement()->Velocity = FVector::Zero();
 	UE_LOG(LogTemp, Warning, TEXT("%s 시퀀스시작"), ANSI_TO_TCHAR(__FUNCTION__));
+	int32 place = 4;
 	if (UWorld* world = GetWorld())
 	{
 		ASOTestGameModeBase* GameMode = Cast<ASOTestGameModeBase>(UGameplayStatics::GetGameMode(world));
@@ -234,24 +236,35 @@ void ASOTestCharacter::OnGameOver()
 			UE_LOG(LogTemp, Warning, TEXT("ASOTestCharacter :: OnGameOver함수 game mode못찾음"));
 			check(false);
 		}
+
+		USOServerSubsystem* serverSystem = GetGameInstance()->GetSubsystem<USOServerSubsystem>();
+		if (serverSystem)
+		{
+			place = serverSystem->GetPlace();
+		}
+		else
+			check(false);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ASOTestCharacter :: OnGameOver함수 world 못찾음"));
 		check(false);
 	}
-	SToCGameOver();
+
+	SToCGameOver(place);
 
 }
 
-void ASOTestCharacter::SToCGameOver_Implementation()
+void ASOTestCharacter::SToCGameOver_Implementation(int32 place)
 {
 	UE_LOG((LogTemp), Display, TEXT("Game Over UI open"));
 	if (AController* tmpController = GetController()) {
 		
 		ATestPlayerController* testController = Cast<ATestPlayerController>(tmpController);
-		if(testController)
-		testController->GameOver();
+		if (testController) {
+			testController->SetGameOverInfo(place);
+			testController->GameOver();
+		}
 		else
 			UE_LOG(LogTemp, Warning, TEXT("%s , controller 없음 "), ANSI_TO_TCHAR(__FUNCTION__));
 	}

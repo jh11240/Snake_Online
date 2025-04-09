@@ -66,7 +66,7 @@ public:
 	UFUNCTION()
 	void OnGameOver();
 	UFUNCTION(Client, Reliable)
-	void SToCGameOver();
+	void SToCGameOver(int32 place);
 
 	bool IsInvincible() { return isInvincible; }
 	void SetInvincible(bool inVal) {if(HasAuthority())
@@ -179,9 +179,9 @@ protected:
 	
 	TArray<FVector> BodyComponentsLoc;
 
-	const float BodyMoveRefreshRate = .5f;;
+	const float BodyMoveRefreshRate = 0.5f;
 	float curSec = 0;
-	float moveSpeed = 100.f;
+	float moveSpeed = 200.f;
 
 public:
 	float GetMoveSpeed() { return moveSpeed; }

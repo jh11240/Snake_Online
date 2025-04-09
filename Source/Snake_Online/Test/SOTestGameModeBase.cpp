@@ -5,6 +5,7 @@
 #include "Test/TestPlayerController.h"
 #include "Test/SOTestCharacter.h"
 #include "Test/SnakeFood.h"
+#include "Subsystem/SOServerSubsystem.h"
 
 ASOTestGameModeBase::ASOTestGameModeBase()
 {
@@ -19,7 +20,21 @@ void ASOTestGameModeBase::BeginPlay()
 	Super::BeginPlay();
     if (HasAuthority()) {
         // 게임 시작 후 일정 시간 간격으로 먹이를 스폰하도록 타이머 설정 예시
-     //   GetWorldTimerManager().SetTimer(FoodSpawnTimerHandle, this, &ASOTestGameModeBase::SpawnFood, 5.0f, true);
+        //   GetWorldTimerManager().SetTimer(FoodSpawnTimerHandle, this, &ASOTestGameModeBase::SpawnFood, 5.0f, true);
+    }
+}
+
+void ASOTestGameModeBase::Logout(AController* Exiting)
+{
+    Super::Logout(Exiting);
+
+    if (UGameInstance* gameInstance = GetGameInstance())
+    {
+        if (USOServerSubsystem* subSystem = gameInstance->GetSubsystem<USOServerSubsystem>())
+        {
+            subSystem->ClientExit(Exiting);
+            UE_LOG(LogTemp, Warning, TEXT("%s logout 처리"),ANSI_TO_TCHAR(__FUNCTION__));
+        }
     }
 }
 

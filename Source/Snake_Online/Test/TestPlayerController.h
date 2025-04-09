@@ -11,6 +11,7 @@ class InputAction;
 struct FInputActionValue;
 class UInputMappingContext;
 class ASOTestCharacter;
+class UCharacterMovementComponent;
 /**
  * 
  */
@@ -25,19 +26,22 @@ public:
 	virtual void SetupInputComponent() override;
 	virtual void OnRep_Pawn() override;
 	//player info 설정 서버 클라 한번에
-	void SetPlayerInfo(ASOTestCharacter* playerCharacter, uint32 playerId);
+	void SetPlayerInfo(ASOTestCharacter* playerCharacter, int32 playerId);
 	void GameOver();
+	void SetGameOverInfo(int32);
 protected:
 	UFUNCTION(Server, Unreliable)
 	void CToSMove(const FVector& Direction, float Value);
 	UFUNCTION(Server,reliable)
-	void CToSSetPlayerInfo(ASOTestCharacter* playerCharacter,uint32 playerId);
+	void CToSSetPlayerInfo(ASOTestCharacter* playerCharacter,int32 playerId);
 
 	void OnMove(const FInputActionValue& InputActionValue);
 
 	//혹시나 나중에 부스트 구현시 사용하려고
 	float speedMultiplier = 1.f;
 	float moveSpeed=100.f;
+	ACharacter* CachedControlledChar;
+	UCharacterMovementComponent* CachedCharMovement;
 protected:
 	TSubclassOf<UUserWidget> GameOverWidget;
 	UUserWidget* createdGameOverWidget;

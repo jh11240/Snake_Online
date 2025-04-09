@@ -28,6 +28,7 @@ protected:
 
 	UFUNCTION()
 	void ReturnToLobby();
+public:
 	UFUNCTION()
 	void SetPlaceText(uint32 place);
 };

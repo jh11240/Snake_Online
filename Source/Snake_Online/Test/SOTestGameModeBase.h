@@ -18,6 +18,7 @@ class SNAKE_ONLINE_API ASOTestGameModeBase : public AGameModeBase
 	
 public:
 	virtual void BeginPlay() override;
+	virtual void Logout(AController* Exiting) override;
 	virtual void Tick(float DeltaTime) override;
 	void SpawnFood();
 	void SpawnFood(FVector SpawnLoc);

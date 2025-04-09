@@ -4,7 +4,11 @@
 #include "Subsystem/SOServerSubsystem.h"
 #include "Utils/NetworkUtils.h"
 #include "Net/UnrealNetwork.h"
+#include "Kismet/KismetSystemLibrary.h"
 
+USOServerSubsystem::USOServerSubsystem() : gamePrize(MatchPlayerNum)
+{
+}
 
 void USOServerSubsystem::AddPlayerToQueue(APlayerController* Player)
 {
@@ -25,26 +29,45 @@ void USOServerSubsystem::SetPlayerSetting(uint32 PlayerID, FPlayerSettings  play
 void USOServerSubsystem::TryMatchPlayers()
 {
         UE_LOG(LogTemp, Warning, TEXT("TryMatchPlayers 서버에서 실행됨!"));
-        if (PlayerQueue.Num() < 2)
+        if (PlayerQueue.Num() < MatchPlayerNum)
             return;
 
-        APlayerController* Player1 = PlayerQueue[0];
-        APlayerController* Player2 = PlayerQueue[1];
-
-        //큐 비워주고
-        PlayerQueue.RemoveAt(0);
-        PlayerQueue.RemoveAt(0);
-        ///Script/Engine.World'/Game/Test/Test.Test'
-        //TODO: 임시로 두명 접속되는지 확인하기
-        
 
         FString TravelCommand = SO::NetworkUtils::GetGameMapURL();
 // UE_EDITOR
 
+        isMatchEntered = true;
         GetWorld()->ServerTravel(TravelCommand);
-
         //Player1->ClientTravel(TravelCommand, TRAVEL_Absolute);
         //Player2->ClientTravel(TravelCommand, TRAVEL_Absolute);
+}
+
+void USOServerSubsystem::ClientExit(AController* Exiting)
+{
+    APlayerController* ExitingPlayer = Cast<APlayerController>(Exiting);
+    if (!ExitingPlayer)
+    {
+        return;
+    }
+
+    // 배열 내 인덱스를 찾습니다.
+    int32 Index = PlayerQueue.Find(ExitingPlayer);
+    if (Index != INDEX_NONE)
+    {
+        PlayerQueue.RemoveAtSwap(Index);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("%s 제거하려는 클라이언트 큐에 존재하지않음"),ANSI_TO_TCHAR(__FUNCTION__));
+        check(false);
+    }
+    if (isMatchEntered && PlayerQueue.Num() == 0)
+        ExitGameServer();
+}
+
+void USOServerSubsystem::ExitGameServer()
+{
+    UKismetSystemLibrary::QuitGame(GetWorld(), nullptr, EQuitPreference::Quit, false);
 }
 
 FPlayerSettings USOServerSubsystem::GetPlayerSetting(uint32 id)

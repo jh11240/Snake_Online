@@ -5,6 +5,8 @@
 #include "Utils/NetworkUtils.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
+#include "Kismet/GameplayStatics.h"
+
 
 void UGameOverUserWidget::NativeConstruct()
 {
@@ -21,7 +23,8 @@ void UGameOverUserWidget::ReturnToLobby()
         // 로컬 컨트롤러인지 확인 후 서버로 연결
         if (PlayerController->IsLocalController())
         {
-            PlayerController->ClientTravel(TravelCommand, TRAVEL_Absolute);
+            //PlayerController->ClientTravel(TravelCommand, TRAVEL_Absolute);
+            UGameplayStatics::OpenLevel(GetWorld(), FName(TravelCommand));
         }
     }
 }
