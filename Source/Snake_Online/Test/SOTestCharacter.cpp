@@ -341,6 +341,12 @@ void ASOTestCharacter::SetNameWidget(const FText& txtName)
 
 
 #pragma region 몸통 관리
+void ASOTestCharacter::OnRep_BodyComponents()
+{
+	UStaticMeshComponent* BodyMesh = BodyComponents.Last(0);
+	if(BodyMesh)
+	BodyMesh->SetMaterial(0, ReplicatedMaterial);
+}
 void ASOTestCharacter::AddBody()
 {
 
@@ -499,7 +505,6 @@ void ASOTestCharacter::AddConsumedFood(int food)
 			for (int i = 0; i < AddBodyCnt; i++)
 			{
 				AddBody();
-				SetMaterialToAddedBody();
 			}
 			//추가하고 남은 값 갱신
 			CurRemainingFoodCnt =AddBodyCnt % FoodCntToAddBody;
@@ -583,15 +588,6 @@ void ASOTestCharacter::OnRep_Material()
 		elem->SetMaterial(0, ReplicatedMaterial);
 	}
 }
-void ASOTestCharacter::SToCSetSpecificBodyMaterial_Implementation(UStaticMeshComponent* bodyTarget, UMaterialInterface* NewMaterial)
-{
-	//되나 안되나 확인용
-	//bodyTarget->SetMaterial(0, NewMaterial);
-
-	UStaticMeshComponent* addedBody = BodyComponents[BodyComponents.Num() - 1];
-	//Material 복제
-	addedBody->SetMaterial(0, NewMaterial);
-}
 void ASOTestCharacter::ServerSetMaterial(uint32 NewMaterialIdx)
 {
 	if(HasAuthority())
@@ -599,13 +595,6 @@ void ASOTestCharacter::ServerSetMaterial(uint32 NewMaterialIdx)
 
 }
 
-void ASOTestCharacter::SetMaterialToAddedBody()
-{
-	UE_LOG(LogTemp, Display, TEXT("%s BodyComponents Num : %d"),ANSI_TO_TCHAR(__FUNCTION__) , BodyComponents.Num());
-	UStaticMeshComponent* addedBody = BodyComponents[BodyComponents.Num()-1];
-	//Material 복제
-	SToCSetSpecificBodyMaterial(addedBody, ReplicatedMaterial);
-}
 
 void ASOTestCharacter::CToSSetMaterial_Implementation(UMaterialInterface* NewMaterial)
 {

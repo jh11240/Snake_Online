@@ -105,8 +105,12 @@ protected:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	UStaticMeshComponent* HeadComponent;
 
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_BodyComponents)
 	TArray<UStaticMeshComponent*> BodyComponents;
+
+private:
+	UFUNCTION()
+	void OnRep_BodyComponents();
 
 	UFUNCTION()
 	void AddBody();
@@ -163,12 +167,10 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void CToSSetMaterial(UMaterialInterface* NewMaterial);
-	UFUNCTION(Client, Reliable)
-	void SToCSetSpecificBodyMaterial(UStaticMeshComponent* bodyTarget,UMaterialInterface* NewMaterial);
+
 public:
 	void ServerSetMaterial(uint32 NewMaterialIdx);
-private:
-	void SetMaterialToAddedBody();
+
 
 #pragma endregion
 
