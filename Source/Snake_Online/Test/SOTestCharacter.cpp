@@ -128,7 +128,6 @@ void ASOTestCharacter::BeginPlay()
 		for (int i = 0; i < InitialSnakeBodyCnt; i++)
 		{
 		AddBody();
-		SetMaterialToAddedBody();
 		}
 	}
 	// 늦게 복제되면 기존 복사된 클라의 name ui 변경 함수 호출못받아서 명시적으로 호출
@@ -589,7 +588,7 @@ void ASOTestCharacter::SToCSetSpecificBodyMaterial_Implementation(UStaticMeshCom
 	//되나 안되나 확인용
 	//bodyTarget->SetMaterial(0, NewMaterial);
 
-	UStaticMeshComponent* addedBody = BodyComponents.Last(0);
+	UStaticMeshComponent* addedBody = BodyComponents[BodyComponents.Num() - 1];
 	//Material 복제
 	addedBody->SetMaterial(0, NewMaterial);
 }
@@ -602,7 +601,8 @@ void ASOTestCharacter::ServerSetMaterial(uint32 NewMaterialIdx)
 
 void ASOTestCharacter::SetMaterialToAddedBody()
 {
-	UStaticMeshComponent* addedBody = BodyComponents.Last(0);
+	UE_LOG(LogTemp, Display, TEXT("%s BodyComponents Num : %d"),ANSI_TO_TCHAR(__FUNCTION__) , BodyComponents.Num());
+	UStaticMeshComponent* addedBody = BodyComponents[BodyComponents.Num()-1];
 	//Material 복제
 	SToCSetSpecificBodyMaterial(addedBody, ReplicatedMaterial);
 }
