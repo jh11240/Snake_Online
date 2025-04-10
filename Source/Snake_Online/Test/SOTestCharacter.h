@@ -163,8 +163,13 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void CToSSetMaterial(UMaterialInterface* NewMaterial);
-	public:
+	UFUNCTION(Client, Reliable)
+	void SToCSetSpecificBodyMaterial(UStaticMeshComponent* bodyTarget,UMaterialInterface* NewMaterial);
+public:
 	void ServerSetMaterial(uint32 NewMaterialIdx);
+private:
+	void SetMaterialToAddedBody();
+
 #pragma endregion
 
 #pragma region 몸통 이동 관련

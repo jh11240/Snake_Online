@@ -10,10 +10,8 @@ USOServerSubsystem::USOServerSubsystem() : gamePrize(MatchPlayerNum)
 {
 }
 
-void USOServerSubsystem::AddPlayerToQueue(APlayerController* Player)
+void USOServerSubsystem::AddLobbyPlayerToQueue(APlayerController* Player)
 {
-    UE_LOG(LogTemp, Warning, TEXT("AddPlayerToQueue 서버에서 실행됨!"));
-
     if (!Player) return;
     PlayerQueue.Add(Player);
 
@@ -35,11 +33,18 @@ void USOServerSubsystem::TryMatchPlayers()
 
         FString TravelCommand = SO::NetworkUtils::GetGameMapURL();
 // UE_EDITOR
-
+        PlayerQueue.Empty();
         isMatchEntered = true;
         GetWorld()->ServerTravel(TravelCommand);
         //Player1->ClientTravel(TravelCommand, TRAVEL_Absolute);
         //Player2->ClientTravel(TravelCommand, TRAVEL_Absolute);
+}
+
+void USOServerSubsystem::AddSnakePlayerToQueue(APlayerController* Player)
+{
+
+    if (!Player) return;
+    PlayerQueue.Add(Player);
 }
 
 void USOServerSubsystem::ClientExit(AController* Exiting)
@@ -61,13 +66,17 @@ void USOServerSubsystem::ClientExit(AController* Exiting)
         UE_LOG(LogTemp, Error, TEXT("%s 제거하려는 클라이언트 큐에 존재하지않음"),ANSI_TO_TCHAR(__FUNCTION__));
         check(false);
     }
+    UE_LOG(LogTemp, Display, TEXT("%s PlayerQueue.NUM : %d , isMatchEntered : %d"),ANSI_TO_TCHAR(__FUNCTION__),PlayerQueue.Num(), isMatchEntered);
     if (isMatchEntered && PlayerQueue.Num() == 0)
         ExitGameServer();
 }
 
 void USOServerSubsystem::ExitGameServer()
 {
-    UKismetSystemLibrary::QuitGame(GetWorld(), nullptr, EQuitPreference::Quit, false);
+    UE_LOG(LogTemp, Display, TEXT("%s" ), ANSI_TO_TCHAR(__FUNCTION__));
+
+        // 기타 필요한 종료 전 작업을 수행한 후...
+        FGenericPlatformMisc::RequestExit(true);
 }
 
 FPlayerSettings USOServerSubsystem::GetPlayerSetting(uint32 id)

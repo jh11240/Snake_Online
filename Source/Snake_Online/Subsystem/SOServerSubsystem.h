@@ -28,10 +28,10 @@ class SNAKE_ONLINE_API USOServerSubsystem : public UGameInstanceSubsystem
 public:
 	USOServerSubsystem();
 public:
-	void AddPlayerToQueue(APlayerController* Player);
+	void AddLobbyPlayerToQueue(APlayerController* Player);
 	void SetPlayerSetting(uint32 PlayerID, FPlayerSettings playerSetting);
-	
 	void TryMatchPlayers();
+	void AddSnakePlayerToQueue(APlayerController* Player);
 public:
 	//Properties
 	void SetClientID(uint32 ID) { ClientUniqueID = ID; }

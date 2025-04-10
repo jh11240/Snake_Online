@@ -11,7 +11,7 @@ void ALobbyPlayerController::CToSAddPlayerQueue_Implementation()
     UE_LOG(LogTemp, Warning, TEXT("플레이어 큐에 넣기 얍!"));
     if (MatchmakingSubsystem)
     {
-        MatchmakingSubsystem->AddPlayerToQueue(this);
+        MatchmakingSubsystem->AddLobbyPlayerToQueue(this);
     }
 }
 

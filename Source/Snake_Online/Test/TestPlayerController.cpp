@@ -59,7 +59,7 @@ const UInputAction* GetInputActionFromName(UInputMappingContext* IMC, const FNam
 void ATestPlayerController::OnPossess(APawn* pawn)
 {
     Super::OnPossess(pawn);
-
+#pragma region 무적시간 핸들링
     ASOTestCharacter* Snake = Cast<ASOTestCharacter>(pawn);
     if (Snake)
     {
@@ -71,19 +71,39 @@ void ATestPlayerController::OnPossess(APawn* pawn)
             Snake->SetInvincible(false);
         }, Snake->GetInvincibleTime(), false);
     }
+#pragma endregion 
 
+#pragma region 플레이어 큐에 넣기
+    if (UGameInstance* gameInstance = GetGameInstance())
+	{
+		USOServerSubsystem* ServerSystem = gameInstance->GetSubsystem<USOServerSubsystem>();
+		if (ServerSystem)
+		{
+            ServerSystem->AddSnakePlayerToQueue(this);
+		}
+    }
+#pragma endregion
+
+#pragma region 서버단에서 캐릭터, 캐릭터무브먼트 캐싱
     CachedControlledChar = Cast<ACharacter>(pawn);
     if (!CachedControlledChar)
     {
         ensure(false);
         return;
     }
+    //move speed 캐싱
+    ASOTestCharacter* testCharacter = Cast<ASOTestCharacter>(pawn);
+    moveSpeed = testCharacter->GetMoveSpeed();
+
     CachedCharMovement = CachedControlledChar->GetCharacterMovement();
     if (!CachedCharMovement)
     {
         ensure(false);
         return;
     }
+#pragma endregion
+
+    //스폰시 다른 방향으로 이동하도록 설정
     FVector startDir = CalStartDir();
     CToSMove(startDir, 1);
 
@@ -92,18 +112,20 @@ void ATestPlayerController::OnPossess(APawn* pawn)
 void ATestPlayerController::BeginPlay()
 {
     Super::BeginPlay();
+    if (IsLocalController()) {
 
-    UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
-    if (Subsystem)
-    {
-        Subsystem->AddMappingContext(IMC_Move, 0);
-    }
-    UWidgetBlueprintLibrary::SetInputMode_GameOnly(this, true);
-    bShowMouseCursor = false;
-    //TODO: Map처리
-    if (IsLocalController()) // 로컬 플레이어 컨트롤러인지 확인
-    {
+        //입력 처리 설정
+        UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+        if (Subsystem)
+        {
+            Subsystem->AddMappingContext(IMC_Move, 0);
+        }
 
+        //인풋 모드 게임 온리로 변경
+        UWidgetBlueprintLibrary::SetInputMode_GameOnly(this, true);
+
+        //커서 끄기
+        bShowMouseCursor = false;
     }
 }
 
@@ -111,6 +133,7 @@ void ATestPlayerController::SetupInputComponent()
 {
     Super::SetupInputComponent();
 
+    //enhancedInputComponent에 액션 바인딩
     UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
     ensure(EnhancedInputComponent);
 

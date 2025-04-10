@@ -126,10 +126,14 @@ void ASOTestCharacter::BeginPlay()
 		FVector headWorldLoc = HeadComponent->GetComponentLocation();
 		BodyComponentsLoc.Add(headWorldLoc);
 		for (int i = 0; i < InitialSnakeBodyCnt; i++)
+		{
 		AddBody();
+		SetMaterialToAddedBody();
+		}
 	}
 	// 늦게 복제되면 기존 복사된 클라의 name ui 변경 함수 호출못받아서 명시적으로 호출
 	OnRep_NameUI();
+	OnRep_Material();
 	// 클라중 내 클라만(ROLE_AutonomousProxy)
 	/*else if (GetLocalRole() == ROLE_AutonomousProxy)
 	{
@@ -382,6 +386,8 @@ void ASOTestCharacter::AddBody()
 		SpawnLocation = HeadComponent->GetComponentLocation() - CurrentDirection*BodyDiameter;
 	}
 
+
+
 	NewBodySegment->SetWorldLocation(SpawnLocation);
 
 	FVector bodyWorldLoc = NewBodySegment->GetComponentLocation();
@@ -491,8 +497,11 @@ void ASOTestCharacter::AddConsumedFood(int food)
 		if (AddBodyCnt >= 0)
 		{
 			//AddBodyCnt만큼 추가
-			for(int i=0;i<AddBodyCnt;i++)
+			for (int i = 0; i < AddBodyCnt; i++)
+			{
 				AddBody();
+				SetMaterialToAddedBody();
+			}
 			//추가하고 남은 값 갱신
 			CurRemainingFoodCnt =AddBodyCnt % FoodCntToAddBody;
 		}
@@ -509,10 +518,30 @@ void ASOTestCharacter::MoveBodySegments(float DeltaTime)
 	//따라서 bodycomonentsloc[i]는 bodycomponent[i-1]의 location
 	for (int i = 0; i < BodyComponents.Num(); i++)
 	{
-		FVector currentPos = BodyComponentsLoc[i+1];
+		// 이전 위치 (목표 위치)와 현재 저장된 위치
+		FVector currentPos = BodyComponentsLoc[i + 1];
 		FVector TargetPos = BodyComponentsLoc[i];
-		FVector direction = (TargetPos - currentPos).GetSafeNormal(); // 방향 계산
-		FVector newLocation = BodyComponents[i]->GetComponentLocation() + direction * moveSpeed * DeltaTime; // 이동 계산
+
+		// 현재 세그먼트의 실제 위치
+		FVector curLocation = BodyComponents[i]->GetComponentLocation();
+
+		// 이미 목표에 거의 도달했다면, 바로 TargetPos에 고정시킵니다.
+		if (FVector::Dist(curLocation, TargetPos) <= KINDA_SMALL_NUMBER)
+		{
+			BodyComponents[i]->SetWorldLocation(TargetPos, true);
+			continue;
+		}
+
+		// 목표 방향을 계산합니다.
+		FVector direction = (TargetPos - curLocation).GetSafeNormal();
+
+		// 한 프레임에 움직일 거리를 계산합니다.
+		float step = moveSpeed * DeltaTime;
+		float distanceToTarget = FVector::Dist(curLocation, TargetPos);
+
+		// 오버슈팅 방지를 위해 남은 거리가 step보다 작으면 바로 TargetPos로 이동
+		FVector newLocation = (distanceToTarget <= step) ? TargetPos : curLocation + direction * step;
+
 		BodyComponents[i]->SetWorldLocation(newLocation, true);
 	}
 }
@@ -520,8 +549,13 @@ void ASOTestCharacter::MoveBodySegments(float DeltaTime)
 //
 void ASOTestCharacter::SetBodyLocation()
 {
+	// 첫 번째 요소에 머리의 현재 위치를 기록합니다.
 	BodyComponentsLoc[0] = HeadComponent->GetComponentLocation();
 
+	// BodyComponents의 각 요소에 대해 현재 위치를 기록합니다.
+	// BodyComponentsLoc[1]은 BodyComponents[0]의 위치,
+	// BodyComponentsLoc[2]은 BodyComponents[1]의 위치,
+	// ... 이런 식으로 저장됩니다.
 	for (int i = 0; i < BodyComponents.Num(); i++)
 	{
 		BodyComponentsLoc[i + 1] = BodyComponents[i]->GetComponentLocation();
@@ -530,6 +564,7 @@ void ASOTestCharacter::SetBodyLocation()
 #pragma endregion
 
 #pragma region Material 처리 관련 함수들
+
 void ASOTestCharacter::SetSnakeMaterial(int32 materialIdx)
 {
 	UMaterialInterface* materialToSet = Materials[materialIdx];
@@ -549,11 +584,27 @@ void ASOTestCharacter::OnRep_Material()
 		elem->SetMaterial(0, ReplicatedMaterial);
 	}
 }
+void ASOTestCharacter::SToCSetSpecificBodyMaterial_Implementation(UStaticMeshComponent* bodyTarget, UMaterialInterface* NewMaterial)
+{
+	//되나 안되나 확인용
+	//bodyTarget->SetMaterial(0, NewMaterial);
+
+	UStaticMeshComponent* addedBody = BodyComponents.Last(0);
+	//Material 복제
+	addedBody->SetMaterial(0, NewMaterial);
+}
 void ASOTestCharacter::ServerSetMaterial(uint32 NewMaterialIdx)
 {
 	if(HasAuthority())
 	ReplicatedMaterial = Materials[NewMaterialIdx];
 
+}
+
+void ASOTestCharacter::SetMaterialToAddedBody()
+{
+	UStaticMeshComponent* addedBody = BodyComponents.Last(0);
+	//Material 복제
+	SToCSetSpecificBodyMaterial(addedBody, ReplicatedMaterial);
 }
 
 void ASOTestCharacter::CToSSetMaterial_Implementation(UMaterialInterface* NewMaterial)
