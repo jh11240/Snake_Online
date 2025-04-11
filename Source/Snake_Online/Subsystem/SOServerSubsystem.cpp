@@ -4,6 +4,7 @@
 #include "Subsystem/SOServerSubsystem.h"
 #include "Utils/NetworkUtils.h"
 #include "Net/UnrealNetwork.h"
+#include "Test/SOTestCharacter.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 USOServerSubsystem::USOServerSubsystem() : gamePrize(MatchPlayerNum)
@@ -67,6 +68,18 @@ void USOServerSubsystem::ClientExit(AController* Exiting)
         check(false);
     }
     UE_LOG(LogTemp, Display, TEXT("%s PlayerQueue.NUM : %d , isMatchEntered : %d"),ANSI_TO_TCHAR(__FUNCTION__),PlayerQueue.Num(), isMatchEntered);
+
+    //한명남아있다면 해당 플레이어 우승처리 후 게임종료
+    if (isMatchEntered && PlayerQueue.Num() == 1)
+    {
+
+        APlayerController* pc = PlayerQueue[0];
+        ACharacter* tmpCharacter = pc->GetCharacter();
+
+        ASOTestCharacter* tmpSnake = Cast<ASOTestCharacter>(tmpCharacter);
+        tmpSnake->OnGameOver();
+
+    }
     if (isMatchEntered && PlayerQueue.Num() == 0)
         ExitGameServer();
 }

@@ -29,13 +29,14 @@ ASnakeFood::ASnakeFood()
 
 	// StarterContent의 Sphere 메쉬를 찾습니다.
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(
-		TEXT("StaticMesh'/Game/StarterContent/Shapes/Shape_Sphere.Shape_Sphere'")
+		TEXT("/Script/Engine.StaticMesh'/Game/Mesh/Apple/Red_Apple_tgzoahbpa_Low.Red_Apple_tgzoahbpa_Low'")
 	);
 
 	if (SphereMesh.Succeeded() && SphereMesh.Object)
 	{
 		// 메쉬 설정
 		StaticMeshComponent->SetStaticMesh(SphereMesh.Object);
+		StaticMeshComponent->SetRelativeScale3D(FVector(15, 15, 15));
 	}
 #pragma endregion
 

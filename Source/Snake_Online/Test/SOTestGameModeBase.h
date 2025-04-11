@@ -25,8 +25,8 @@ public:
 private:
 	FVector GetRandomLocation();
 
-	FVector MinBound= FVector(-150.000000, -250.000000, 140.000000);
-	FVector MaxBound = FVector(990.000000, 530.000000, 140.000000);
+	FVector MinBound= FVector(-460.000000, -600.000000, 140.000000);
+	FVector MaxBound = FVector(1180.000000, 1150.000000, 140.000000);
 
 	// 타이머 핸들 변수 선언
 	FTimerHandle FoodSpawnTimerHandle;

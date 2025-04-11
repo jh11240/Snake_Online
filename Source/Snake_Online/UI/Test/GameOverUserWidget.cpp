@@ -31,7 +31,12 @@ void UGameOverUserWidget::ReturnToLobby()
 #define LOCTEXT_NAMESPACE "GameOverWidget"
 void UGameOverUserWidget::SetPlaceText(uint32 place)
 {
-    FText comment = FText::Format(LOCTEXT("PlaceFormat", "{0}등"), place);
+    FText comment;
+    if (place == 1)
+    {
+        comment = LOCTEXT("Winner", "우승");
+    }
+    else  comment= FText::Format(LOCTEXT("PlaceFormat", "{0}등"), place);
     TextPlace->SetText(comment);
 }
 
