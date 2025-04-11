@@ -131,8 +131,7 @@ void ASOTestCharacter::BeginPlay()
 		}
 	}
 	// 늦게 복제되면 기존 복사된 클라의 name ui 변경 함수 호출못받아서 명시적으로 호출
-	OnRep_NameUI();
-	OnRep_Material();
+
 	// 클라중 내 클라만(ROLE_AutonomousProxy)
 	/*else if (GetLocalRole() == ROLE_AutonomousProxy)
 	{
@@ -174,6 +173,12 @@ void ASOTestCharacter::InitSnake()
 		isPossessed = true;
 
 	}
+}
+
+void ASOTestCharacter::InitClientSnake()
+{
+	OnRep_NameUI();
+	OnRep_Material();
 }
 
 
@@ -343,6 +348,7 @@ void ASOTestCharacter::SetNameWidget(const FText& txtName)
 #pragma region 몸통 관리
 void ASOTestCharacter::OnRep_BodyComponents()
 {
+	if (BodyComponents.Contains(nullptr)) return;
 	UStaticMeshComponent* BodyMesh = BodyComponents.Last(0);
 	if(BodyMesh)
 	BodyMesh->SetMaterial(0, ReplicatedMaterial);

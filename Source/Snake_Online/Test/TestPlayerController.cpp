@@ -150,8 +150,11 @@ void ATestPlayerController::OnRep_Pawn()
     ASOTestCharacter* ControlledCharacter = Cast<ASOTestCharacter>(GetPawn());
     if (ControlledCharacter)
     {
+        //클라이언트에서 캐릭터랑 movement 캐싱
         CachedControlledChar = ControlledCharacter;
         CachedCharMovement = CachedControlledChar->GetCharacterMovement();
+
+        //로비에서 할당받은 클라이언트 id 토대로 서버로부터 정보 불러옴
         UGameInstance* gameInstance = GetGameInstance();
         if (gameInstance)
         {
@@ -169,7 +172,11 @@ void ATestPlayerController::OnRep_Pawn()
         else
             check(false);
 
-        //moveSpeed = ControlledCharacter->GetMoveSpeed();
+        //클라이언트에서 ui랑 material 처리
+        ControlledCharacter->InitClientSnake();
+
+        
+        //ui 생성
         if (GameOverWidget && createdGameOverWidget == nullptr)
         {
             createdGameOverWidget = Cast<UUserWidget>(CreateWidget<UUserWidget>(GetWorld(), GameOverWidget));
@@ -179,9 +186,7 @@ void ATestPlayerController::OnRep_Pawn()
             }
             createdGameOverWidget->SetVisibility(ESlateVisibility::Hidden);
         }
-        //// Character 초기화 로직
-        //USOTESTUserWidget* tmpWidget = Cast<USOTESTUserWidget>(createdLobbyWidget);
-        //tmpWidget->OnChangeMaterial.AddUniqueDynamic(ControlledCharacter, &ASOTestCharacter::SetSnakeMaterial);
+        
     }
 }
 

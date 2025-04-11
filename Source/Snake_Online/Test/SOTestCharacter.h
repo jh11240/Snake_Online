@@ -32,8 +32,10 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
-	//뱀 상태 초기화 -> playercontrolller onpossess에서 호출
+	//뱀 상태 초기화 -> playercontroller onpossess에서 호출
 	void InitSnake();
+	//playercontroller onrep_pawn에서 호출
+	void InitClientSnake();
 
 protected:
 	//카메라와 스프링 암

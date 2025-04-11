@@ -14,7 +14,7 @@ namespace SO
 		static FString GetTitleURL() { return TitleMap; };
 		
 	private:
-		static inline FString FURL = TEXT("127.0.0.1:7777");
+		static inline FString FURL = TEXT("13.124.239.135:7777");
 		static inline FString GameMap = TEXT("/Game/Test/Test");
 		static inline FString TitleMap = TEXT("/Game/Level/Title");
 
