@@ -26,10 +26,10 @@ ASnakeFood::ASnakeFood()
 	StaticMeshComponent->SetupAttachment(RootComponent);
 	StaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	StaticMeshComponent->SetIsReplicated(true);
-
+	///Script/Engine.StaticMesh'/Game/Mesh/RedAppleMesh/Red_Apple_tgzoahbpa_Low.Red_Apple_tgzoahbpa_Low'
 	// StarterContent의 Sphere 메쉬를 찾습니다.
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(
-		TEXT("/Script/Engine.StaticMesh'/Game/Mesh/Apple/Red_Apple_tgzoahbpa_Low.Red_Apple_tgzoahbpa_Low'")
+		TEXT("/Script/Engine.StaticMesh'/Game/Mesh/RedAppleMesh/Red_Apple_tgzoahbpa_Low.Red_Apple_tgzoahbpa_Low'")
 	);
 
 	if (SphereMesh.Succeeded() && SphereMesh.Object)
