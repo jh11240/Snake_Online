@@ -55,7 +55,6 @@ void ASOTestGameModeBase::Tick(float DeltaTime)
 
 void ASOTestGameModeBase::SpawnFood()
 {
-    UE_LOG(LogTemp, Display, TEXT("음식 스폰 시작!"));
     // 서버 권한인지 검사
     if (HasAuthority())
     {
@@ -63,7 +62,6 @@ void ASOTestGameModeBase::SpawnFood()
         FVector SpawnLocation = GetRandomLocation();
 
         FRotator SpawnRotation = FRotator::ZeroRotator;
-        UE_LOG(LogTemp, Warning, TEXT("%f,%f,%f"), SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
         // 먹이 액터 생성 (스폰)
         ASnakeFood* NewFood = GetWorld()->SpawnActor<ASnakeFood>(ASnakeFood::StaticClass(), SpawnLocation, SpawnRotation);
         if (NewFood)

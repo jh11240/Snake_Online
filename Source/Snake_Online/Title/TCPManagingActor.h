@@ -19,6 +19,10 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	bool GetPortFromLauncher();
+
+	UFUNCTION()
+	void ActivateLoginButton(UUserWidget* inWidget);
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

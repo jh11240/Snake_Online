@@ -3,13 +3,18 @@
 
 #include "Title/TCPManagingActor.h"
 
+#include "Containers/StringConv.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerController.h"
+#include "TitleHUD.h"
+#include "UI/Title/TitleUserWidget.h"
+
 // Networking 관련 헤더
+#include "Utils/NetworkUtils.h"
 #include "Sockets.h"
 #include "SocketSubsystem.h"
 #include "IPAddress.h"
 #include "Interfaces/IPv4/IPv4Address.h"
-
-#include "Containers/StringConv.h"
 // Sets default values
 ATCPManagingActor::ATCPManagingActor()
 {
@@ -22,22 +27,73 @@ ATCPManagingActor::ATCPManagingActor()
 void ATCPManagingActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	// 1. 소켓 생성 (TCP 스트림 소켓)
+
+    //런처에서 정상적으로 받아왔을 때
+    if (GetPortFromLauncher())
+    {
+        //widget 접속 버튼 활성화시키기
+        APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+        if (PC)
+        {
+            ATitleHUD* MyHUD = Cast<ATitleHUD>(PC->GetHUD());
+            if (MyHUD)
+            {
+                MyHUD->OnWidgetAddedToViewport.AddDynamic(this, &ATCPManagingActor::ActivateLoginButton);
+                UTitleUserWidget* UserWidget = MyHUD->GetTitleInfoWidget();
+                if (UserWidget)
+                {
+                    UE_LOG(LogTemp, Display, TEXT("%s USERWIDGET 찾아옴!"), ANSI_TO_TCHAR(__FUNCTION__));
+
+                    ActivateLoginButton(UserWidget);
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Error, TEXT("%s USERWIDGET 못찾아옴"), ANSI_TO_TCHAR(__FUNCTION__));
+                    check(false);
+                }
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("%s HUD 못찾아옴"), ANSI_TO_TCHAR(__FUNCTION__));
+                check(false);
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("%s PC 못찾아옴"),ANSI_TO_TCHAR(__FUNCTION__));
+            check(false);
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("런처프로그램으로부터 포트 못받아와서 접속 불가!"));
+        check(false);
+        return;
+    }
+
+
+}
+
+bool ATCPManagingActor::GetPortFromLauncher()
+{
+
+#pragma region 소켓 생성해서 받아오는 시퀀스
+    // 1. 소켓 생성 (TCP 스트림 소켓)
     FSocket* Socket = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_Stream, TEXT("TCP_CLIENT"), false);
     if (!Socket)
     {
         UE_LOG(LogTemp, Error, TEXT("소켓 생성 실패"));
-        return;
+        return false;
     }
 
-    // 2. 연결할 서버 주소 설정 (127.0.0.1:7777)
+    // 2. 연결할 서버 주소 설정 (테스트용 127.0.0.1:7777)
     FIPv4Address IP;
-    FIPv4Address::Parse(TEXT("127.0.0.1"), IP);
+    FIPv4Address::Parse(SO::NetworkUtils::GetIP(), IP);
 
     TSharedRef<FInternetAddr> Addr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
     Addr->SetIp(IP.Value);
-    Addr->SetPort(7777);
+    int32 port = FCString::Atoi(*(SO::NetworkUtils::GetPort()));
+    Addr->SetPort(port);
 
     // 3. 서버에 연결
     bool bConnected = Socket->Connect(*Addr);
@@ -45,29 +101,20 @@ void ATCPManagingActor::BeginPlay()
     {
         UE_LOG(LogTemp, Error, TEXT("서버에 연결 실패: %s"), *Addr->ToString(true));
         ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(Socket);
-        return;
+        return false;
     }
-
-    // 4. "hello" 메시지 전송 (UTF8 인코딩)
-    //FString Message = TEXT("hello");
-    ////StringCast<ANSICHAR> UTF8String(*Message);  // ANSICHAR는 UTF-8 문자 타입
-
-    //UTF8CHAR* UTF8Message = StringCast<UTF8CHAR>(*Message);
-    //    //UTF8String.Get();
-    //int32 DataSize = UTF8String.Length();
-    // 기존의 자료형을 const uint8* 형태로 강제 변환
+    //4. requset msg 전송
     const uint8* DataBuffer = reinterpret_cast<const uint8*>(TCHAR_TO_UTF8(*serverRequestMsg));
     int32 DataSize = FCStringAnsi::Strlen(reinterpret_cast<const char*>(DataBuffer));
-    // 또는, 이미 UTF-8인 데이터를 다루고 있다면 적절한 방법으로 DataSize를 설정
     int32 BytesSent = 0;
-    
+
     bool bSent = Socket->Send(DataBuffer, DataSize, BytesSent);
     if (!bSent)
     {
         UE_LOG(LogTemp, Error, TEXT("메시지 전송 실패"));
         Socket->Close();
         ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(Socket);
-        return;
+        return false;
     }
     else
     {
@@ -86,16 +133,29 @@ void ATCPManagingActor::BeginPlay()
         // 수신된 바이트 뒤에 NULL 추가 (문자열 완전화를 위하여)
         Buffer[BytesRead] = '\0';
         int32 ReceivedPort = *reinterpret_cast<int32*>(Buffer);
+        SO::NetworkUtils::SetPort(FString::FromInt(ReceivedPort));
         UE_LOG(LogTemp, Log, TEXT("Received: %d (%d bytes)"), ReceivedPort, BytesRead);
     }
+    //메시지 수신 실패시 false로 리턴
     else
     {
         UE_LOG(LogTemp, Error, TEXT("메시지 수신 실패"));
+        Socket->Close();
+        ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(Socket);
+        return false;
     }
 
     // 7. 연결 종료 및 소켓 해제
     Socket->Close();
     ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(Socket);
+#pragma endregion
+    return true;
+}
+
+void ATCPManagingActor::ActivateLoginButton(UUserWidget* inWidget)
+{
+    UTitleUserWidget* widget = Cast<UTitleUserWidget>(inWidget);
+    widget->SetLoginBtnActivate(true);
 }
 
 // Called every frame

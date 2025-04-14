@@ -22,6 +22,7 @@ void ATitleHUD::BeginPlay()
 	Super::BeginPlay();
 	check(TitleInfoWidget);
 	TitleInfoWidget->AddToViewport();
+	OnWidgetAddedToViewport.Broadcast(TitleInfoWidget);
 
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
 	if (PlayerController)
