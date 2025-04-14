@@ -36,7 +36,7 @@ ASnakeFood::ASnakeFood()
 	{
 		// 메쉬 설정
 		StaticMeshComponent->SetStaticMesh(SphereMesh.Object);
-		StaticMeshComponent->SetRelativeScale3D(FVector(15, 15, 15));
+		StaticMeshComponent->SetRelativeScale3D(FVector(9, 9, 9));
 	}
 #pragma endregion
 

@@ -10,8 +10,12 @@
 
 void UTitleUserWidget::NativeConstruct()
 {
-    if(loginButton)
-    loginButton->OnClicked.AddUniqueDynamic(this, &UTitleUserWidget::ServerConnect);
+    if (loginButton) {
+        UE_LOG(LogTemp, Display, TEXT("%s, login button DeActivate"), ANSI_TO_TCHAR(__FUNCTION__));
+        loginButton->OnClicked.AddUniqueDynamic(this, &UTitleUserWidget::ServerConnect);
+    SetLoginBtnActivate(false);
+    }
+
 }
 
 void UTitleUserWidget::ServerConnect()
@@ -27,4 +31,15 @@ void UTitleUserWidget::ServerConnect()
             //PlayerController->ClientTravel(SO::NetworkUtils::GetServerURL(), TRAVEL_Absolute);
         }
     }
+}
+
+void UTitleUserWidget::SetLoginBtnActivate(bool active)
+{
+    if (active)
+    {
+        UE_LOG(LogTemp, Display, TEXT("%s, login button activate"),ANSI_TO_TCHAR(__FUNCTION__));
+        loginButton->SetVisibility(ESlateVisibility::Visible);
+    }
+    else
+        loginButton->SetVisibility(ESlateVisibility::Hidden);
 }

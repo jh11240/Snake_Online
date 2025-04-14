@@ -23,4 +23,7 @@ protected:
     // 위젯 블루프린트와 연결될 버튼
     UPROPERTY(meta = (BindWidget))
     UButton* loginButton;
+
+public:
+    void SetLoginBtnActivate(bool active);
 };

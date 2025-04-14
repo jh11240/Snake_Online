@@ -130,6 +130,7 @@ void ASOTestCharacter::BeginPlay()
 		AddBody();
 		}
 	}
+	InitClientSnake();
 	// 늦게 복제되면 기존 복사된 클라의 name ui 변경 함수 호출못받아서 명시적으로 호출
 
 	// 클라중 내 클라만(ROLE_AutonomousProxy)
@@ -349,9 +350,13 @@ void ASOTestCharacter::SetNameWidget(const FText& txtName)
 void ASOTestCharacter::OnRep_BodyComponents()
 {
 	if (BodyComponents.Contains(nullptr)) return;
-	UStaticMeshComponent* BodyMesh = BodyComponents.Last(0);
+	/*UStaticMeshComponent* BodyMesh = BodyComponents.Last(0);
 	if(BodyMesh)
-	BodyMesh->SetMaterial(0, ReplicatedMaterial);
+	BodyMesh->SetMaterial(0, ReplicatedMaterial);*/
+	for(UStaticMeshComponent* BodyMesh : BodyComponents)
+	{
+		BodyMesh->SetMaterial(0, ReplicatedMaterial);
+	}
 }
 void ASOTestCharacter::AddBody()
 {

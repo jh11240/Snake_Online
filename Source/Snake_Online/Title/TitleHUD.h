@@ -6,6 +6,7 @@
 #include "GameFramework/HUD.h"
 #include "TitleHUD.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWidgetAddedToViewport, UUserWidget*, Widget);
 class UTitleUserWidget;
 /**
  * 
@@ -16,10 +17,12 @@ class SNAKE_ONLINE_API ATitleHUD : public AHUD
 	GENERATED_BODY()
 public:
 	ATitleHUD();
-
+	UTitleUserWidget* GetTitleInfoWidget() { return TitleInfoWidget; }
 protected:
 	UTitleUserWidget* TitleInfoWidget = nullptr;
 
 protected:
 	virtual void BeginPlay() override;
+public:
+	FOnWidgetAddedToViewport OnWidgetAddedToViewport;
 };
