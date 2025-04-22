@@ -27,7 +27,7 @@ namespace SO
 		//게임런처 프로그램에 진입 url
 
 		//통 ip
-		static inline FString IP = TEXT("127.0.0.1");
+		static inline FString IP = TEXT("52.78.120.162");
 		static inline FString Port = TEXT("7777");
 
 		static inline FString FURL = IP + TEXT(":") + Port;
